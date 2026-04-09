@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.nckh.htql_thi.dto.request.StudentCreationRequest;
-import com.nckh.htql_thi.dto.request.StudentUpdateRequest;
+import com.nckh.htql_thi.dto.request.student.StudentCreationRequest;
+import com.nckh.htql_thi.dto.request.student.StudentUpdateRequest;
 import com.nckh.htql_thi.entity.Student;
 import com.nckh.htql_thi.service.StudentService;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -34,12 +34,12 @@ public class StudentController {
         return studentService.createRequest(request);
     }
     @GetMapping
-    List<Student> getStudents() {
+    public List<Student> getStudents() {
         return studentService.getStudents();
     }
 
     @GetMapping("/{studentMsv}")
-    Student getStudent(@PathVariable("studentMsv") Long studentMsv) {
+    public Student getStudent(@PathVariable("studentMsv") Long studentMsv) {
         return studentService.getStudent(studentMsv);
     }
     @PutMapping("/{studentMsv}")
@@ -48,7 +48,7 @@ public class StudentController {
     }
 
     @DeleteMapping("/{studentMsv}")
-    String deleteStudent(@PathVariable Long studentMsv) {
+    public String deleteStudent(@PathVariable Long studentMsv) {
         studentService.deleteStudent(studentMsv);
         return "Sinh vien co MSV : " + studentMsv + " da duoc xoa";
     }

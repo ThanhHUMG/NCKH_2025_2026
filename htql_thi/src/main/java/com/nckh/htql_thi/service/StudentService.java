@@ -13,8 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.nckh.htql_thi.dto.request.StudentCreationRequest;
-import com.nckh.htql_thi.dto.request.StudentUpdateRequest;
+import com.nckh.htql_thi.dto.request.student.StudentCreationRequest;
+import com.nckh.htql_thi.dto.request.student.StudentUpdateRequest;
 import com.nckh.htql_thi.entity.Student;
 import com.nckh.htql_thi.repository.StudentRepository;
 
@@ -23,8 +23,6 @@ public class StudentService {
 
     @Autowired
     private StudentRepository studentRepository;
-
-    // --- QUẢN LÝ SINH VIÊN (CRUD) ---
 
     public Student createRequest(StudentCreationRequest request) {
         Student student = new Student();
@@ -64,8 +62,6 @@ public class StudentService {
         studentRepository.deleteById(studentMsv);
     }
 
-    // --- XỬ LÝ EXCEL ---
-
     public List<Student> importStudents(MultipartFile file) throws IOException {
         List<Student> students = new ArrayList<>();
         DataFormatter formatter = new DataFormatter();
@@ -74,18 +70,15 @@ public class StudentService {
             Sheet sheet = workbook.getSheetAt(0);
 
             for (Row row : sheet) {
-                // Bỏ qua tiêu đề (dòng 0)
                 if (row.getRowNum() == 0) continue;
 
                 Student student = new Student();
 
-                // Đọc MSV (Cột 0)
                 String msvStr = formatter.formatCellValue(row.getCell(0));
                 if (!msvStr.isEmpty()) {
                     student.setMsv(Long.parseLong(msvStr));
                 }
 
-                // Đọc các thông tin còn lại
                 student.setHoTen(formatter.formatCellValue(row.getCell(1)));
                 student.setNganh(formatter.formatCellValue(row.getCell(2)));
                 student.setLop(formatter.formatCellValue(row.getCell(3)));

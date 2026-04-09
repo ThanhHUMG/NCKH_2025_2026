@@ -1,4 +1,4 @@
-package com.nckh.htql_thi.dto.request;
+package com.nckh.htql_thi.dto.request.student;
 
 import lombok.Data;
 
