@@ -10,4 +10,4 @@ WORKDIR /app
 # Lưu ý: Kiểm tra chính xác tên file .jar trong folder target sau khi build
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx300m", "-jar", "app.jar"]
