@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: nckh-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: htql_thi
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      # Cú pháp: Cổng_Máy_Host : Cổng_Trong_Docker
+      # Vì máy bạn đã bị chiếm cổng 3306, ta sẽ map nó ra cổng 3307 trên máy của bạn
+      - "3307:3306"
+    volumes:
+      # Lưu trữ dữ liệu để không bị mất khi tắt container
+      - mysql-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+volumes:
+  mysql-data:
