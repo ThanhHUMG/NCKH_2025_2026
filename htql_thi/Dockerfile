@@ -1,8 +1,13 @@
+# Stage 1: Build
 FROM maven:3.8.5-openjdk-17 AS build
+WORKDIR /app
 COPY . .
 RUN mvn clean package -DskipTests
 
-FROM openjdk:17-jdk-slim
-COPY --from=build /target/htql_thi-0.0.1-SNAPSHOT.jar app.jar
+# Stage 2: Run
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+# Lưu ý: Kiểm tra chính xác tên file .jar trong folder target sau khi build
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
