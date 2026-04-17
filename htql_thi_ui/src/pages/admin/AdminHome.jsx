@@ -7,7 +7,6 @@ export default function AdminHome() {
   const [stats, setStats] = useState({ sv: 0, gv: 0, lh: 0, kt: 0 });
 
   useEffect(() => {
-    // Gọi đồng thời các API để lấy số lượng thống kê
     const loadStats = async () => {
       try {
         const [sv, gv, lh, kt] = await Promise.all([
