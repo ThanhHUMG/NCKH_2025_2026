@@ -18,7 +18,6 @@ public class JwtService {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
-    // 🔥 FIX: method bạn bị thiếu
     public String generateToken(String username, String role) {
         return Jwts.builder()
                 .subject(username)

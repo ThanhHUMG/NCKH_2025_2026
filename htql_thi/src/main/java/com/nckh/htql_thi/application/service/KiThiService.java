@@ -61,13 +61,10 @@ public class KiThiService implements ManageKiThiUseCase {
 
         KiThi savedKiThi = kiThiPort.luu(kiThi);
 
-        // lấy tất cả lớp học thuộc học kỳ đó
         List<LopHoc> dsLopHoc = lopHocPort.findByHocKi(maHocKi);
 
-        // tạo môn thi từ lớp học
         for (LopHoc lopHoc : dsLopHoc) {
 
-            // tránh tạo trùng môn thi
             if (monThiPort.existsByLopHocAndKiThi(lopHoc.getMaLopHoc(), savedKiThi.getMaKiThi())) {
                 continue;
             }

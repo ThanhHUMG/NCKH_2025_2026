@@ -56,8 +56,6 @@ public class LopHocService implements ManageLopHocUseCase {
         HocKi hocKi = hocKiPort.timTheoId(maHocKi)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ ID: " + maHocKi));
 
-        // ====== RÀNG BUỘC QUAN TRỌNG ======
-        // giáo viên phải cùng khoa với môn học
         if (giaoVien.getKhoa() == null || monHoc.getKhoa() == null) {
             throw new RuntimeException("Giáo viên và môn học phải thuộc khoa");
         }
@@ -90,7 +88,6 @@ public class LopHocService implements ManageLopHocUseCase {
         HocKi hocKi = hocKiPort.timTheoId(maHocKi)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ ID: " + maHocKi));
 
-        // check khoa
         if (giaoVien.getKhoa() == null || monHoc.getKhoa() == null) {
             throw new RuntimeException("Giáo viên và môn học phải thuộc khoa");
         }
@@ -106,7 +103,6 @@ public class LopHocService implements ManageLopHocUseCase {
         return lopHocPort.luu(lopHoc);
     }
 
-    // add nhiều sinh viên vào lớp
     @Override
     @Transactional
     public LopHoc addSinhVienToLop(Long maLopHoc, List<Long> dsMsv) {
@@ -121,7 +117,6 @@ public class LopHocService implements ManageLopHocUseCase {
             SinhVien sv = sinhVienPort.timTheoId(msv)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên MSV: " + msv));
 
-            // nếu chưa có thì add
             if (!lopHoc.getDsSinhVien().contains(sv)) {
                 lopHoc.getDsSinhVien().add(sv);
             }

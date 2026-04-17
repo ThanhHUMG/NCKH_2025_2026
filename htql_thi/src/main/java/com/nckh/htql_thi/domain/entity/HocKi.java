@@ -22,7 +22,6 @@ public class HocKi {
     @Column(nullable = false)
     private String tenHocKy;
 
-    // 1 học kỳ có nhiều lớp
     @JsonIgnore
     @OneToMany(mappedBy = "hocKi")
     private List<LopHoc> dsLopHoc;

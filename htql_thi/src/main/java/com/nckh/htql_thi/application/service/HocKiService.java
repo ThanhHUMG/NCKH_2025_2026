@@ -62,8 +62,6 @@ public class HocKiService implements ManageHocKiUseCase {
         hocKiPort.xoa(id);
     }
 
-    // ====================== IMPORT EXCEL ======================
-    // Cột A: tenHocKy
     @Override
     @Transactional
     public void importExcel(InputStream inputStream) {
@@ -94,7 +92,6 @@ public class HocKiService implements ManageHocKiUseCase {
         }
     }
 
-    // ====================== HELPER ======================
     private String getCellString(Cell cell) {
         if (cell == null) return null;
 

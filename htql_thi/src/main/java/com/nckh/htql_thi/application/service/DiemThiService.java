@@ -59,7 +59,6 @@ public DiemThi nhapDiem(Long msv, Long maMonThi,
     MonThi monThi = monThiPort.timTheoId(maMonThi)
             .orElseThrow(() -> new RuntimeException("Không tìm thấy môn thi"));
 
-    // 🔥 FIX CỨNG: tách rõ update vs create
     DiemThi diemThi;
 
     var existing = diemThiPort.findBySinhVienAndMonThi(msv, maMonThi);

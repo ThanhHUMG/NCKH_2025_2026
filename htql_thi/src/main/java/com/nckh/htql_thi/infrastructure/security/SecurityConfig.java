@@ -66,8 +66,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-    // ================= CORS =================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
@@ -75,7 +73,6 @@ public class SecurityConfig {
 
         config.setAllowedOrigins(List.of("http://localhost:5173"));
 
-        // 🔥 FIX POST 403
         config.setAllowedMethods(List.of("*"));
 
         config.setAllowedHeaders(List.of("*"));

@@ -123,7 +123,6 @@ public class UserService implements ManageUserUseCase {
         userPort.deleteById(id);
     }
 
-    // ========================= HELPER =========================
     private void validateUsernamePassword(String username, String password) {
 
         if (username == null || username.trim().isEmpty()) {

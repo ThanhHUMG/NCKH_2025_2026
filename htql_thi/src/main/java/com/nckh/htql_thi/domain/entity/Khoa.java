@@ -22,17 +22,14 @@ public class Khoa {
     @Column(nullable = false, unique = true)
     private String tenKhoa;
 
-    // 1 khoa có nhiều môn học
     @JsonIgnore
     @OneToMany(mappedBy = "khoa", cascade = CascadeType.ALL)
     private List<MonHoc> dsMonHoc;
 
-    // 1 khoa có nhiều giáo viên
     @JsonIgnore
     @OneToMany(mappedBy = "khoa", cascade = CascadeType.ALL)
     private List<GiaoVien> dsGiaoVien;
 
-    // 1 khoa có nhiều sinh viên
     @JsonIgnore
     @OneToMany(mappedBy = "khoa", cascade = CascadeType.ALL)
     private List<SinhVien> dsSinhVien;

@@ -117,12 +117,10 @@ public class TeacherService implements ManageTeacherUseCase {
         SinhVien sinhVien = sinhVienPort.timTheoId(msv)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên"));
 
-        // validate điểm
         validateDiem(diemA, "diemA");
         validateDiem(diemB, "diemB");
         validateDiem(diemC, "diemC");
 
-        // tìm điểm thi đã có chưa
         DiemThi diemThi = diemThiPort.findBySinhVienAndMonThi(msv, maMonThi)
                 .orElse(DiemThi.builder()
                         .sinhVien(sinhVien)
@@ -133,7 +131,6 @@ public class TeacherService implements ManageTeacherUseCase {
         diemThi.setDiemB(diemB);
         diemThi.setDiemC(diemC);
 
-        // @PrePersist @PreUpdate trong entity sẽ tự tính diemTb, diemChu
         return diemThiPort.luu(diemThi);
     }
 

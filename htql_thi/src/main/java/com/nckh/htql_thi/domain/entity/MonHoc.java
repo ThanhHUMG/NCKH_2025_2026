@@ -28,7 +28,6 @@ public class MonHoc {
     @JoinColumn(name = "ma_khoa")
     private Khoa khoa;
 
-    // 1 môn học có thể có nhiều lớp học
     @JsonIgnore
     @OneToMany(mappedBy = "monHoc")
     private List<LopHoc> dsLopHoc;

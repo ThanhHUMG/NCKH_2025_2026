@@ -9,6 +9,4 @@ public interface LopHocRepository extends JpaRepository<LopHoc, Long> {
     List<LopHoc> findByHocKi_MaHocKi(Long maHocKi);
 
     List<LopHoc> findByGiaoVien_MaGiaoVien(Long maGiaoVien);
-
-    // 🔥 XÓA DÒNG NÀY: findByGiaoVien_User_Username (Vì Entity GiaoVien không có biến user)
 }

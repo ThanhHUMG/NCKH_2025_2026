@@ -72,10 +72,6 @@ public class MonHocService implements ManageMonHocUseCase {
         monHocPort.xoa(id);
     }
 
-    // ====================== IMPORT EXCEL ======================
-    // Cột A: tenMonHoc
-    // Cột B: tinChi
-    // Cột C: tenKhoa
     @Override
     @Transactional
     public void importExcel(InputStream inputStream) {
@@ -116,7 +112,6 @@ public class MonHocService implements ManageMonHocUseCase {
         }
     }
 
-    // ====================== HELPER ======================
     private String getCellString(Cell cell) {
         if (cell == null) return null;
 

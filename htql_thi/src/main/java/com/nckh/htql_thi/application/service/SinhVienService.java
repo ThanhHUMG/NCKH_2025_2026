@@ -72,15 +72,6 @@ public class SinhVienService implements ManageSinhVienUseCase {
         sinhVienPort.xoa(id);
     }
 
-    // ====================== IMPORT EXCEL ======================
-    // Format Excel:
-    // Cột A: hoTen
-    // Cột B: namSinh
-    // Cột C: nienKhoa
-    // Cột D: soDienThoai
-    // Cột E: email
-    // Cột F: diaChi
-    // Cột G: tenKhoa
     @Override
     @Transactional
     public void importExcel(InputStream inputStream) {
@@ -90,7 +81,7 @@ public class SinhVienService implements ManageSinhVienUseCase {
             List<SinhVien> list = new ArrayList<>();
 
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // bỏ header
+                if (row.getRowNum() == 0) continue;
 
                 String hoTen = getCellString(row.getCell(0));
                 Integer namSinh = getCellInteger(row.getCell(1));
@@ -99,8 +90,6 @@ public class SinhVienService implements ManageSinhVienUseCase {
                 String email = getCellString(row.getCell(4));
                 String diaChi = getCellString(row.getCell(5));
                 String tenKhoa = getCellString(row.getCell(6));
-
-                // nếu dòng rỗng thì bỏ qua
                 if (hoTen == null || hoTen.trim().isEmpty()) {
                     continue;
                 }
@@ -109,21 +98,19 @@ public class SinhVienService implements ManageSinhVienUseCase {
                     throw new RuntimeException("Dòng " + (row.getRowNum() + 1) + ": Thiếu tên khoa");
                 }
 
-                // tìm khoa
                 Khoa khoa = khoaPort.timTheoTen(tenKhoa.trim())
                         .orElseThrow(() -> new RuntimeException(
                                 "Dòng " + (row.getRowNum() + 1) + ": Không tìm thấy khoa: " + tenKhoa));
 
-                // validate email và số điện thoại (nếu có)
                 if (email != null && !email.trim().isEmpty()) {
                     if (sinhVienPort.existsByEmail(email.trim())) {
-                        continue; // bỏ qua dòng bị trùng email
+                        continue;
                     }
                 }
 
                 if (soDienThoai != null && !soDienThoai.trim().isEmpty()) {
                     if (sinhVienPort.existsBySoDienThoai(soDienThoai.trim())) {
-                        continue; // bỏ qua dòng bị trùng sđt
+                        continue;
                     }
                 }
 
@@ -145,8 +132,6 @@ public class SinhVienService implements ManageSinhVienUseCase {
             throw new RuntimeException("Lỗi đọc file Excel Sinh Viên: " + e.getMessage());
         }
     }
-
-    // ====================== HELPER ======================
 
     private String getCellString(Cell cell) {
         if (cell == null) return null;

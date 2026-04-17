@@ -101,23 +101,21 @@ public class MonThiService implements ManageMonThiUseCase {
     public List<MonThi> getMonThiChoAdminHoacTeacher(Long maGiaoVien, boolean isAdmin) {
 
         if (isAdmin) {
-            return monThiPort.layTatCa(); // ADMIN thấy tất cả
+            return monThiPort.layTatCa();
         }
 
-        return monThiPort.findByGiaoVien(maGiaoVien); // TEACHER thấy môn mình
+        return monThiPort.findByGiaoVien(maGiaoVien);
     }
     @Override
     public List<SinhVien> getSinhVienByMonThi(Long maMonThi) {
-        // Tìm môn thi
+
         MonThi monThi = monThiPort.timTheoId(maMonThi)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy môn thi"));
 
-        // Kiểm tra nếu môn thi chưa gắn với lớp học
         if (monThi.getLopHoc() == null) {
             throw new RuntimeException("Môn thi này chưa được chỉ định lớp học nào!");
         }
 
-        // Trả về danh sách sinh viên của lớp đó
         return monThi.getLopHoc().getDsSinhVien();
     }
 }

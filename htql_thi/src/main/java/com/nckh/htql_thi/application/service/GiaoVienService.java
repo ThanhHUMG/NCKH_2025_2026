@@ -76,14 +76,6 @@ public class GiaoVienService implements ManageGiaoVienUseCase {
         giaoVienPort.xoa(id);
     }
 
-    // ====================== IMPORT EXCEL ======================
-    // Cột A: hoTen
-    // Cột B: namSinh
-    // Cột C: trinhDo
-    // Cột D: soDienThoai
-    // Cột E: email
-    // Cột F: diaChi
-    // Cột G: tenKhoa
     @Override
     @Transactional
     public void importExcel(InputStream inputStream) {
@@ -113,14 +105,12 @@ public class GiaoVienService implements ManageGiaoVienUseCase {
                         .orElseThrow(() -> new RuntimeException(
                                 "Dòng " + (row.getRowNum() + 1) + ": Không tìm thấy khoa: " + tenKhoa));
 
-                // trùng email thì bỏ qua
                 if (email != null && !email.trim().isEmpty()) {
                     if (giaoVienPort.existsByEmail(email.trim())) {
                         continue;
                     }
                 }
 
-                // trùng sđt thì bỏ qua
                 if (soDienThoai != null && !soDienThoai.trim().isEmpty()) {
                     if (giaoVienPort.existsBySoDienThoai(soDienThoai.trim())) {
                         continue;
@@ -146,7 +136,6 @@ public class GiaoVienService implements ManageGiaoVienUseCase {
         }
     }
 
-    // ====================== HELPER ======================
     private String getCellString(Cell cell) {
         if (cell == null) return null;
 

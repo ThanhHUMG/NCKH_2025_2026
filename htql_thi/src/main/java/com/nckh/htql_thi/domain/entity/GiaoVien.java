@@ -34,12 +34,10 @@ public class GiaoVien {
 
     private String diaChi;
 
-    // giáo viên thuộc khoa
     @ManyToOne
     @JoinColumn(name = "ma_khoa")
     private Khoa khoa;
 
-    // giáo viên dạy nhiều lớp
     @JsonIgnore
     @OneToMany(mappedBy = "giaoVien")
     private List<LopHoc> dsLopHoc;

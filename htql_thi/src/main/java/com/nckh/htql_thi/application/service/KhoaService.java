@@ -67,8 +67,6 @@ public class KhoaService implements ManageKhoaUseCase {
         khoaPort.xoa(id);
     }
 
-    // ====================== IMPORT EXCEL ======================
-    // Cột A: tenKhoa
     @Override
     @Transactional
     public void importExcel(InputStream inputStream) {
@@ -105,7 +103,6 @@ public class KhoaService implements ManageKhoaUseCase {
         }
     }
 
-    // ====================== HELPER ======================
     private String getCellString(Cell cell) {
         if (cell == null) return null;
 

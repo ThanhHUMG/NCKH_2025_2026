@@ -33,12 +33,10 @@ public class SinhVien {
 
     private String diaChi;
 
-    // sinh viên thuộc 1 khoa
     @ManyToOne
     @JoinColumn(name = "ma_khoa")
     private Khoa khoa;
 
-    // sinh viên học nhiều lớp
     @JsonIgnore
     @ManyToMany(mappedBy = "dsSinhVien")
     private List<LopHoc> dsLopHoc;
