@@ -70,15 +70,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration config = new CorsConfiguration();
-
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "https://nckh-2025-2026-1.onrender.com"
+        ));
 
         config.setAllowedMethods(List.of("*"));
-
         config.setAllowedHeaders(List.of("*"));
-
         config.setAllowCredentials(true);
-
         config.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: "https://htql-thi-api.onrender.com",
+  headers: { "Content-Type": "application/json" },
 });
 
 axiosClient.interceptors.request.use((config) => {
