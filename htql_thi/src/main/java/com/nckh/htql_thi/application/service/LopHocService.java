@@ -102,7 +102,6 @@ public class LopHocService implements ManageLopHocUseCase {
 
         return lopHocPort.luu(lopHoc);
     }
-
     @Override
     @Transactional
     public LopHoc addSinhVienToLop(Long maLopHoc, List<Long> dsMsv) {
@@ -113,9 +112,21 @@ public class LopHocService implements ManageLopHocUseCase {
             lopHoc.setDsSinhVien(new ArrayList<>());
         }
 
+        Khoa khoaMonHoc = lopHoc.getMonHoc().getKhoa();
+        if (khoaMonHoc == null) {
+            throw new RuntimeException("Môn học của lớp này chưa được gán Khoa, không thể đối chiếu.");
+        }
+
         for (Long msv : dsMsv) {
             SinhVien sv = sinhVienPort.timTheoId(msv)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên MSV: " + msv));
+
+            if (sv.getKhoa() == null) {
+                throw new RuntimeException("Sinh viên " + sv.getHoTen() + " chưa được gán Khoa.");
+            }
+            if (!sv.getKhoa().getMaKhoa().equals(khoaMonHoc.getMaKhoa())) {
+                throw new RuntimeException("Lỗi: Sinh viên " + sv.getHoTen() + " thuộc khoa " + sv.getKhoa().getTenKhoa() + ", không khớp với khoa " + khoaMonHoc.getTenKhoa() + " của môn học.");
+            }
 
             if (!lopHoc.getDsSinhVien().contains(sv)) {
                 lopHoc.getDsSinhVien().add(sv);
