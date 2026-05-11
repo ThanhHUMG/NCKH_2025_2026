@@ -44,7 +44,6 @@ public class JwtService {
         try {
             String username = extractUsername(token);
             Date exp = extractClaims(token).getExpiration();
-
             return username.equals(userDetails.getUsername()) && exp.after(new Date());
         } catch (Exception e) {
             return false;

@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import DashboardLayout from "../../layout/DashboardLayout";
 import axiosClient from "../../api/axiosClient";
+import ImportExcelBox from "../../components/ImportExcelBox";
+import Pagination from "../../components/Pagination";
+import { Users, Edit, Trash2 } from "lucide-react";
 
 export default function GiaoVienPage() {
-  const [giaoVienList, setGiaoVienList] = useState([]);
-  const [khoaList, setKhoaList] = useState([]);
+  const [list, setList] = useState([]);
+  const [khoas, setKhoas] = useState([]);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     hoTen: "",
     namSinh: "",
@@ -14,360 +18,222 @@ export default function GiaoVienPage() {
     diaChi: "",
     maKhoa: "",
   });
-  const [editingId, setEditingId] = useState(null);
-  const [excelFile, setExcelFile] = useState(null);
 
-  const loadGiaoVien = async () => {
-    try {
-      const res = await axiosClient.get("/api/giao-vien");
-      setGiaoVienList(res.data);
-    } catch (error) {
-      console.error("Lỗi load giáo viên", error);
-    }
-  };
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
-  const loadKhoa = async () => {
-    try {
-      const res = await axiosClient.get("/api/khoa");
-      setKhoaList(res.data);
-    } catch (error) {
-      console.error("Lỗi load khoa", error);
-    }
+  const loadData = async () => {
+    const [gv, k] = await Promise.all([
+      axiosClient.get("/api/giao-vien"),
+      axiosClient.get("/api/khoa"),
+    ]);
+    setList(gv.data);
+    setKhoas(k.data);
   };
 
   useEffect(() => {
-    loadGiaoVien();
-    loadKhoa();
+    loadData();
   }, []);
 
-  const resetForm = () => {
-    setForm({
-      hoTen: "",
-      namSinh: "",
-      trinhDo: "",
-      soDienThoai: "",
-      email: "",
-      diaChi: "",
-      maKhoa: "",
-    });
-    setEditingId(null);
-  };
-
-  const handleSubmit = async () => {
-    if (!form.hoTen || !form.namSinh || !form.trinhDo || !form.maKhoa) {
-      alert("⚠️ Vui lòng nhập đầy đủ thông tin bắt buộc (*)");
-      return;
-    }
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     const payload = {
-      hoTen: form.hoTen,
+      ...form,
       namSinh: Number(form.namSinh),
-      trinhDo: form.trinhDo,
-      soDienThoai: form.soDienThoai,
-      email: form.email,
-      diaChi: form.diaChi,
-      khoa: {
-        maKhoa: Number(form.maKhoa),
-      },
+      khoa: { maKhoa: Number(form.maKhoa) },
     };
-
     try {
-      if (editingId) {
+      if (editingId)
         await axiosClient.put(`/api/giao-vien/${editingId}`, payload);
-        alert("✅ Cập nhật giáo viên thành công!");
-      } else {
-        await axiosClient.post("/api/giao-vien", payload);
-        alert("✅ Thêm giáo viên thành công!");
-      }
-
-      resetForm();
-      loadGiaoVien();
-    } catch (error) {
-      alert(
-        "❌ Có lỗi xảy ra, vui lòng kiểm tra lại (VD: trùng SĐT, Email...)",
-      );
-    }
-  };
-
-  const handleEdit = (gv) => {
-    setEditingId(gv.maGiaoVien);
-    setForm({
-      hoTen: gv.hoTen || "",
-      namSinh: gv.namSinh || "",
-      trinhDo: gv.trinhDo || "",
-      soDienThoai: gv.soDienThoai || "",
-      email: gv.email || "",
-      diaChi: gv.diaChi || "",
-      maKhoa: gv.khoa?.maKhoa || "",
-    });
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("⚠️ Bạn có chắc muốn xóa giáo viên này?")) return;
-    try {
-      await axiosClient.delete(`/api/giao-vien/${id}`);
-      alert("✅ Xóa giáo viên thành công!");
-      loadGiaoVien();
-    } catch (error) {
-      alert("❌ Lỗi khi xóa giáo viên!");
-    }
-  };
-
-  const handleImportExcel = async () => {
-    if (!excelFile) {
-      alert("⚠️ Vui lòng chọn file Excel!");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", excelFile);
-    try {
-      await axiosClient.post("/api/giao-vien/import-excel", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      else await axiosClient.post("/api/giao-vien", payload);
+      setForm({
+        hoTen: "",
+        namSinh: "",
+        trinhDo: "",
+        soDienThoai: "",
+        email: "",
+        diaChi: "",
+        maKhoa: "",
       });
-      alert("✅ Import Excel giáo viên thành công!");
-      setExcelFile(null);
-      document.getElementById("excelFileInputGV").value = "";
-      loadGiaoVien();
+      setEditingId(null);
+      loadData();
     } catch (error) {
-      alert(
-        "❌ Lỗi import Excel: " +
-          (error.response?.data || "Kiểm tra lại định dạng file"),
-      );
+      alert("❌ Lỗi: Trùng SĐT, Email hoặc sai dữ liệu!");
     }
   };
+
+  const currentData = list.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   return (
     <DashboardLayout>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3 className="text-primary fw-bold">👨‍🏫 Quản lý Giáo Viên</h3>
-      </div>
-
-      <div className="row">
-        {/* CỘT TRÁI: FORM & IMPORT */}
-        <div className="col-lg-4 mb-4">
-          {/* FORM THÊM/SỬA */}
-          <div className="card shadow-sm border-0 mb-4">
-            <div
-              className={`card-header text-white fw-bold ${editingId ? "bg-warning text-dark" : "bg-success"}`}
-            >
-              {editingId ? "✏️ Cập nhật thông tin" : "➕ Thêm giáo viên mới"}
-            </div>
-            <div className="card-body bg-light">
-              <div className="mb-3">
-                <label className="form-label text-muted small fw-bold">
-                  Họ và tên *
-                </label>
-                <input
-                  className="form-control form-control-sm"
-                  placeholder="VD: Nguyễn Văn A"
-                  value={form.hoTen}
-                  onChange={(e) => setForm({ ...form, hoTen: e.target.value })}
-                />
-              </div>
-
-              <div className="row mb-3">
+      <h3 className="fw-bold text-dark mb-4 d-flex align-items-center gap-2">
+        <Users className="text-primary" /> Quản lý Giáo Viên
+      </h3>
+      <div className="row g-4">
+        <div className="col-lg-4">
+          <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <h5 className="fw-bold mb-4">
+              {editingId ? "Sửa thông tin" : "Thêm Giáo Viên"}
+            </h5>
+            <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                className="form-control mb-2 rounded-3"
+                placeholder="Họ và tên *"
+                value={form.hoTen}
+                onChange={(e) => setForm({ ...form, hoTen: e.target.value })}
+                required
+              />
+              <div className="row g-2 mb-2">
                 <div className="col-6">
-                  <label className="form-label text-muted small fw-bold">
-                    Năm sinh *
-                  </label>
                   <input
-                    className="form-control form-control-sm"
-                    placeholder="VD: 1980"
                     type="number"
+                    className="form-control rounded-3"
+                    placeholder="Năm sinh *"
                     value={form.namSinh}
                     onChange={(e) =>
                       setForm({ ...form, namSinh: e.target.value })
                     }
+                    required
                   />
                 </div>
                 <div className="col-6">
-                  <label className="form-label text-muted small fw-bold">
-                    Trình độ *
-                  </label>
                   <input
-                    className="form-control form-control-sm"
-                    placeholder="Thạc sĩ, Tiến sĩ..."
+                    type="text"
+                    className="form-control rounded-3"
+                    placeholder="Trình độ *"
                     value={form.trinhDo}
                     onChange={(e) =>
                       setForm({ ...form, trinhDo: e.target.value })
                     }
+                    required
                   />
                 </div>
               </div>
-
-              <div className="mb-3">
-                <label className="form-label text-muted small fw-bold">
-                  Khoa trực thuộc *
-                </label>
-                <select
-                  className="form-select form-select-sm"
-                  value={form.maKhoa}
-                  onChange={(e) => setForm({ ...form, maKhoa: e.target.value })}
-                >
-                  <option value="">-- Chọn khoa --</option>
-                  {khoaList.map((k) => (
-                    <option key={k.maKhoa} value={k.maKhoa}>
-                      {k.tenKhoa}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label text-muted small fw-bold">
-                  Số điện thoại
-                </label>
-                <input
-                  className="form-control form-control-sm"
-                  placeholder="Nhập SĐT"
-                  value={form.soDienThoai}
-                  onChange={(e) =>
-                    setForm({ ...form, soDienThoai: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label text-muted small fw-bold">
-                  Email
-                </label>
-                <input
-                  className="form-control form-control-sm"
-                  placeholder="Nhập Email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="form-label text-muted small fw-bold">
-                  Địa chỉ
-                </label>
-                <input
-                  className="form-control form-control-sm"
-                  placeholder="Nhập địa chỉ"
-                  value={form.diaChi}
-                  onChange={(e) => setForm({ ...form, diaChi: e.target.value })}
-                />
-              </div>
-
-              <div className="d-grid gap-2">
-                <button
-                  className={`btn ${editingId ? "btn-warning fw-bold text-dark" : "btn-success fw-bold"}`}
-                  onClick={handleSubmit}
-                >
-                  {editingId ? "💾 Lưu Cập Nhật" : "✅ Tạo Mới"}
-                </button>
-                {editingId && (
-                  <button
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={resetForm}
-                  >
-                    ❌ Hủy thao tác
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* IMPORT EXCEL */}
-          <div className="card shadow-sm border-0 border-top border-info border-3">
-            <div className="card-body">
-              <h6 className="card-title text-info fw-bold mb-3">
-                📁 Import từ Excel
-              </h6>
-              <input
-                id="excelFileInputGV"
-                type="file"
-                className="form-control form-control-sm mb-3"
-                onChange={(e) => setExcelFile(e.target.files[0])}
-              />
-              <button
-                className="btn btn-info btn-sm text-white w-100 fw-bold"
-                onClick={handleImportExcel}
+              <select
+                className="form-select mb-2 rounded-3"
+                value={form.maKhoa}
+                onChange={(e) => setForm({ ...form, maKhoa: e.target.value })}
+                required
               >
-                🚀 Tải lên dữ liệu
+                <option value="">-- Khoa trực thuộc * --</option>
+                {khoas.map((k) => (
+                  <option key={k.maKhoa} value={k.maKhoa}>
+                    {k.tenKhoa}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                className="form-control mb-2 rounded-3"
+                placeholder="Số điện thoại"
+                value={form.soDienThoai}
+                onChange={(e) =>
+                  setForm({ ...form, soDienThoai: e.target.value })
+                }
+              />
+              <input
+                type="email"
+                className="form-control mb-2 rounded-3"
+                placeholder="Email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+              <input
+                type="text"
+                className="form-control mb-3 rounded-3"
+                placeholder="Địa chỉ"
+                value={form.diaChi}
+                onChange={(e) => setForm({ ...form, diaChi: e.target.value })}
+              />
+
+              <button
+                type="submit"
+                className="btn btn-primary w-100 rounded-3 fw-bold py-2"
+              >
+                {editingId ? "Cập nhật" : "Tạo mới"}
               </button>
-            </div>
+            </form>
           </div>
+          <ImportExcelBox
+            endpoint="/api/giao-vien/import-excel"
+            onSuccess={loadData}
+            title="Import Giáo Viên"
+          />
         </div>
 
-        {/* CỘT PHẢI: BẢNG DỮ LIỆU */}
         <div className="col-lg-8">
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-              <h5 className="mb-0 text-dark fw-bold">
-                📋 Danh sách Giáo viên ({giaoVienList.length})
-              </h5>
-            </div>
-            <div className="card-body p-0">
-              <div
-                className="table-responsive"
-                style={{ maxHeight: "800px", overflowY: "auto" }}
-              >
-                <table className="table table-hover align-middle mb-0 text-center">
-                  <thead className="table-light text-muted sticky-top">
-                    <tr>
-                      <th>Mã GV</th>
-                      <th className="text-start">Họ tên</th>
-                      <th>Trình độ</th>
-                      <th>Khoa</th>
-                      <th>Liên hệ</th>
-                      <th style={{ minWidth: "100px" }}>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {giaoVienList.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="text-center py-4 text-muted">
-                          Chưa có dữ liệu giáo viên.
-                        </td>
-                      </tr>
-                    ) : (
-                      giaoVienList.map((gv) => (
-                        <tr key={gv.maGiaoVien}>
-                          <td className="fw-bold text-secondary">
-                            GV{gv.maGiaoVien}
-                          </td>
-                          <td className="text-start fw-bold text-dark">
-                            {gv.hoTen}
-                          </td>
-                          <td>
-                            <span className="badge bg-primary bg-opacity-75">
-                              {gv.trinhDo}
-                            </span>
-                          </td>
-                          <td>{gv.khoa?.tenKhoa}</td>
-                          <td className="text-start small">
-                            {gv.soDienThoai && <div>📞 {gv.soDienThoai}</div>}
-                            {gv.email && <div>✉️ {gv.email}</div>}
-                          </td>
-                          <td>
-                            <div className="btn-group" role="group">
-                              <button
-                                className="btn btn-outline-warning btn-sm"
-                                title="Sửa"
-                                onClick={() => handleEdit(gv)}
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                className="btn btn-outline-danger btn-sm"
-                                title="Xóa"
-                                onClick={() => handleDelete(gv.maGiaoVien)}
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          <div className="card border-0 shadow-sm rounded-4 p-4">
+            <table className="table table-hover align-middle mb-0">
+              <thead className="table-light small text-uppercase">
+                <tr>
+                  <th>MGV</th>
+                  <th>Giáo Viên</th>
+                  <th>Liên Hệ</th>
+                  <th>Khoa</th>
+                  <th className="text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentData.map((gv) => (
+                  <tr key={gv.maGiaoVien}>
+                    <td className="fw-bold text-secondary">#{gv.maGiaoVien}</td>
+                    <td>
+                      <div className="fw-bold">{gv.hoTen}</div>
+                      <span className="badge bg-light text-dark border">
+                        {gv.trinhDo}
+                      </span>
+                    </td>
+                    <td className="small text-muted">
+                      <div>📞 {gv.soDienThoai || "---"}</div>
+                      <div>✉️ {gv.email || "---"}</div>
+                    </td>
+                    <td>{gv.khoa?.tenKhoa}</td>
+                    <td className="text-center">
+                      <button
+                        className="btn btn-sm btn-light text-primary me-2"
+                        onClick={() => {
+                          setEditingId(gv.maGiaoVien);
+                          setForm({
+                            hoTen: gv.hoTen,
+                            namSinh: gv.namSinh,
+                            trinhDo: gv.trinhDo,
+                            soDienThoai: gv.soDienThoai || "",
+                            email: gv.email || "",
+                            diaChi: gv.diaChi || "",
+                            maKhoa: gv.khoa?.maKhoa,
+                          });
+                        }}
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        className="btn btn-sm btn-light text-danger"
+                        onClick={async () => {
+                          if (window.confirm("Xóa giáo viên?")) {
+                            await axiosClient.delete(
+                              `/api/giao-vien/${gv.maGiaoVien}`,
+                            );
+                            loadData();
+                          }
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={list.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </div>
       </div>

@@ -12,12 +12,11 @@ export function AuthProvider({ children }) {
       username,
       password,
     });
-
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("role", res.data.role);
-
     setToken(res.data.token);
     setRole(res.data.role);
+    return res.data.role;
   };
 
   const logout = () => {
@@ -34,6 +33,4 @@ export function AuthProvider({ children }) {
   );
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);

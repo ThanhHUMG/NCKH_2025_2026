@@ -1,137 +1,188 @@
 import React, { useEffect, useState } from "react";
 import DashboardLayout from "../../layout/DashboardLayout";
 import axiosClient from "../../api/axiosClient";
+import {
+  Calendar,
+  User as UserIcon,
+  Info,
+  BookOpen,
+  Award,
+} from "lucide-react";
 
 export default function StudentHome() {
-  const [me, setMe] = useState(null);
-  const [scores, setScores] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [lichThiList, setLichThiList] = useState([]);
+  const [diemList, setDiemList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadStudentData = async () => {
       try {
-        const [resMe, resScores] = await Promise.all([
+        // Gọi các API chuyên biệt dành riêng cho Sinh viên đã có trong Backend
+        const [resMe, resLich, resDiem] = await Promise.all([
           axiosClient.get("/api/student/me"),
+          axiosClient.get("/api/student/lich-thi"),
           axiosClient.get("/api/student/diem"),
         ]);
-        setMe(resMe.data);
-        setScores(resScores.data);
-      } catch (error) {
-        console.error("Lỗi lấy dữ liệu sinh viên:", error);
+
+        setProfile(resMe.data);
+        setLichThiList(resLich.data);
+        setDiemList(resDiem.data);
+      } catch (e) {
+        console.error("Lỗi tải dữ liệu sinh viên:", e);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchData();
+    loadStudentData();
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
       <DashboardLayout>
-        <div className="text-center mt-5">
-          <div className="spinner-border text-primary" role="status"></div>
-        </div>
+        <div className="p-4">Đang tải dữ liệu sinh viên...</div>
       </DashboardLayout>
     );
-  }
 
   return (
     <DashboardLayout>
-      {/* ================= THÔNG TIN CÁ NHÂN ================= */}
-      {me && (
-        <div className="card shadow-sm p-4 mb-4 border-top border-info border-4">
-          <h4 className="mb-4 text-info text-darken">👤 Thông tin cá nhân</h4>
-          <div className="row">
-            <div className="col-md-6">
-              <table className="table table-borderless">
-                <tbody>
-                  <tr>
-                    <th style={{ width: "150px" }}>Mã sinh viên:</th>
-                    <td className="fw-bold">{me.msv}</td>
-                  </tr>
-                  <tr>
-                    <th>Họ và tên:</th>
-                    <td className="fw-bold text-primary">{me.hoTen}</td>
-                  </tr>
-                  <tr>
-                    <th>Năm sinh:</th>
-                    <td>{me.namSinh}</td>
-                  </tr>
-                  <tr>
-                    <th>Khóa / Niên khóa:</th>
-                    <td>{me.nienKhoa || "Chưa cập nhật"}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div className="col-md-6">
-              <table className="table table-borderless">
-                <tbody>
-                  <tr>
-                    <th style={{ width: "150px" }}>Khoa:</th>
-                    {/* 👇 CHỖ ĐÃ FIX LỖI SẬP WEB 👇 */}
-                    <td className="fw-bold">
-                      {me.khoa?.tenKhoa || "Chưa cập nhật"}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Email:</th>
-                    <td>{me.email || "Chưa cập nhật"}</td>
-                  </tr>
-                  <tr>
-                    <th>Số điện thoại:</th>
-                    <td>{me.soDienThoai || "Chưa cập nhật"}</td>
-                  </tr>
-                  <tr>
-                    <th>Địa chỉ:</th>
-                    <td>{me.diaChi || "Chưa cập nhật"}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+      <h3 className="fw-bold text-dark mb-4 d-flex align-items-center gap-2">
+        <UserIcon className="text-success" /> Cổng Thông Tin Sinh Viên
+      </h3>
+
+      {/* 1. THÔNG TIN CÁ NHÂN CHI TIẾT */}
+      <div className="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white border-start border-4 border-success">
+        <h5 className="fw-bold mb-3 d-flex align-items-center gap-2 text-success">
+          <Info size={20} /> Thông Tin Cá Nhân
+        </h5>
+        <div className="row g-3">
+          <div className="col-md-4">
+            <span className="text-muted small">Họ và tên:</span>{" "}
+            <strong className="d-block">{profile?.hoTen}</strong>
+          </div>
+          <div className="col-md-4">
+            <span className="text-muted small">Mã Sinh Viên:</span>{" "}
+            <strong className="d-block">{profile?.msv}</strong>
+          </div>
+          <div className="col-md-4">
+            <span className="text-muted small">Khoa:</span>{" "}
+            <strong className="d-block">{profile?.khoa?.tenKhoa}</strong>
+          </div>
+          <div className="col-md-4">
+            <span className="text-muted small">Niên khóa:</span>{" "}
+            <strong className="d-block">{profile?.nienKhoa || "N/A"}</strong>
+          </div>
+          <div className="col-md-4">
+            <span className="text-muted small">Năm sinh:</span>{" "}
+            <strong className="d-block">{profile?.namSinh}</strong>
+          </div>
+          <div className="col-md-4">
+            <span className="text-muted small">Email:</span>{" "}
+            <strong className="d-block">
+              {profile?.email || "Chưa cập nhật"}
+            </strong>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* ================= BẢNG ĐIỂM ================= */}
-      <div className="card shadow-sm p-4 border-top border-primary border-4">
-        <h4 className="mb-4 text-primary">🎓 Bảng điểm của tôi</h4>
-
+      {/* 2. LỊCH THI ĐẦY ĐỦ THÔNG TIN */}
+      <div className="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <h5 className="fw-bold mb-4 d-flex align-items-center gap-2 text-primary">
+          <Calendar size={20} /> Lịch Thi Chi Tiết
+        </h5>
         <div className="table-responsive">
-          <table className="table table-bordered table-hover align-middle text-center">
-            <thead className="table-primary text-dark">
+          <table className="table table-hover align-middle text-center">
+            <thead className="table-light text-muted small">
               <tr>
-                <th className="text-start">Môn thi</th>
-                <th title="Trọng số 60%">Cuối kỳ (A)</th>
-                <th title="Trọng số 30%">Giữa kỳ (B)</th>
-                <th title="Trọng số 10%">Chuyên cần (C)</th>
-                <th>Điểm TB (Hệ 10)</th>
-                <th>Điểm chữ</th>
+                <th>Mã Môn</th>
+                <th className="text-start">Tên Môn Học</th>
+                <th>Ngày Thi</th>
+                <th>Tiết Bắt Đầu</th>
+                <th>Phòng Thi</th>
+                <th>Hình Thức</th>
               </tr>
             </thead>
             <tbody>
-              {scores.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="text-muted py-3">
-                    Bạn chưa có điểm môn nào.
-                  </td>
-                </tr>
-              ) : (
-                scores.map((d) => (
-                  <tr key={d.id}>
-                    <td className="text-start fw-bold">
-                      {d.monThi?.tenMonThi}
+              {lichThiList.length > 0 ? (
+                lichThiList.map((lt) => (
+                  <tr key={lt.maLichThi}>
+                    <td>
+                      <span className="badge bg-secondary bg-opacity-10 text-secondary">
+                        {lt.monHoc?.maMonHoc}
+                      </span>
                     </td>
-                    <td className="text-primary fw-bold">{d.diemA ?? "-"}</td>
-                    <td className="text-primary fw-bold">{d.diemB ?? "-"}</td>
-                    <td className="text-primary fw-bold">{d.diemC ?? "-"}</td>
-                    <td className="text-danger fw-bold">{d.diemTb ?? "-"}</td>
-                    <td className="text-danger fw-bold fs-5">
-                      {d.diemChu ?? "-"}
+                    <td className="text-start fw-bold">
+                      {lt.monHoc?.tenMonHoc}
+                    </td>
+                    <td className="text-danger fw-bold">{lt.thoiGian}</td>
+                    <td>Tiết {lt.tietBatDau}</td>
+                    <td>
+                      <span className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3">
+                        {lt.phongThi}
+                      </span>
+                    </td>
+                    <td>
+                      <small className="fw-bold text-muted">
+                        {lt.hinhThucThi}
+                      </small>
                     </td>
                   </tr>
                 ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="py-4 text-muted small">
+                    Chưa có lịch thi nào được công bố.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 3. KẾT QUẢ HỌC TẬP (ĐIỂM SỐ) */}
+      <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <h5 className="fw-bold mb-4 d-flex align-items-center gap-2 text-warning">
+          <Award size={20} /> Kết Quả Học Tập
+        </h5>
+        <div className="table-responsive">
+          <table className="table table-bordered align-middle text-center">
+            <thead className="table-light text-muted small">
+              <tr>
+                <th className="text-start">Tên Môn Học</th>
+                <th>Điểm A (60%)</th>
+                <th>Điểm B (30%)</th>
+                <th>Điểm C (10%)</th>
+                <th>Tổng Kết</th>
+                <th>Điểm Chữ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {diemList.length > 0 ? (
+                diemList.map((d) => (
+                  <tr key={d.id}>
+                    <td className="text-start fw-bold">
+                      {d.lopHoc?.monHoc?.tenMonHoc}
+                    </td>
+                    <td className="fw-bold text-primary">{d.diemA ?? "-"}</td>
+                    <td>{d.diemB ?? "-"}</td>
+                    <td>{d.diemC ?? "-"}</td>
+                    <td className="fw-bold bg-light">{d.diemTb ?? "-"}</td>
+                    <td>
+                      <span
+                        className={`badge ${d.diemTb >= 4 ? "bg-success" : "bg-danger"} px-3`}
+                      >
+                        {d.diemChu || "N/A"}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="py-4 text-muted small">
+                    Dữ liệu điểm số đang được cập nhật.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>

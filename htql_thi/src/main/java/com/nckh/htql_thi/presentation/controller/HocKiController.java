@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 
 @RestController
@@ -17,23 +16,23 @@ public class HocKiController {
     private final ManageHocKiUseCase hocKiUseCase;
 
     @GetMapping
-    public ResponseEntity<List<HocKi>> getAll() {
-        return ResponseEntity.ok(hocKiUseCase.getAllHocKi());
+    public ResponseEntity<List<HocKi>> getAll() { 
+        return ResponseEntity.ok(hocKiUseCase.getAllHocKi()); 
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<HocKi> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(hocKiUseCase.getHocKiById(id));
+    public ResponseEntity<HocKi> getById(@PathVariable Long id) { 
+        return ResponseEntity.ok(hocKiUseCase.getHocKiById(id)); 
     }
 
     @PostMapping
-    public ResponseEntity<HocKi> create(@RequestBody HocKi hocKi) {
-        return ResponseEntity.ok(hocKiUseCase.createHocKi(hocKi));
+    public ResponseEntity<HocKi> create(@RequestBody HocKi hocKi) { 
+        return ResponseEntity.ok(hocKiUseCase.createHocKi(hocKi)); 
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<HocKi> update(@PathVariable Long id, @RequestBody HocKi hocKi) {
-        return ResponseEntity.ok(hocKiUseCase.updateHocKi(id, hocKi));
+    public ResponseEntity<HocKi> update(@PathVariable Long id, @RequestBody HocKi hocKi) { 
+        return ResponseEntity.ok(hocKiUseCase.updateHocKi(id, hocKi)); 
     }
 
     @DeleteMapping("/{id}")

@@ -3,133 +3,157 @@ import DashboardLayout from "../../layout/DashboardLayout";
 import axiosClient from "../../api/axiosClient";
 import { Bar } from "react-chartjs-2";
 import "chart.js/auto";
+import { BarChart3 } from "lucide-react";
 
 export default function TeacherXemDiem() {
-  const [monThiList, setMonThiList] = useState([]);
-  const [scores, setScores] = useState([]);
-  const [selectedMon, setSelectedMon] = useState(null);
+  const [lopHocList, setLopHocList] = useState([]);
+  const [selectedLop, setSelectedLop] = useState(null);
+  const [thongKe, setThongKe] = useState(null);
 
   useEffect(() => {
     axiosClient
-      .get("/api/teacher/mon-thi")
-      .then((res) => setMonThiList(res.data));
+      .get("/api/teacher/lop-hoc")
+      .then((res) => setLopHocList(res.data));
   }, []);
 
-  const handleSelectMon = async (mt) => {
-    setSelectedMon(mt);
+  const handleSelectLop = async (lh) => {
+    setSelectedLop(lh);
     try {
-      // Chỉ lấy những sinh viên ĐÃ CÓ ĐIỂM để vẽ thống kê
+      // Backend của bạn cung cấp API thống kê chung cho Lớp học
       const res = await axiosClient.get(
-        `/api/teacher/mon-thi/${mt.maMonThi}/scores`,
+        `/api/diem-thi/lop-hoc/${lh.maLopHoc}/thong-ke`,
       );
-      setScores(res.data);
+      setThongKe(res.data);
     } catch (error) {
-      alert("Lỗi tải dữ liệu điểm!");
+      alert("Lớp học này chưa có dữ liệu điểm để thống kê!");
+      setThongKe(null);
     }
   };
 
-  // Cấu hình dữ liệu cho Chart.js
-  const chartData = {
-    labels: ["A+", "A", "B+", "B", "C+", "C", "D+", "D", "F"],
-    datasets: [
-      {
-        label: "Số lượng sinh viên",
-        backgroundColor: "rgba(54, 162, 235, 0.7)",
-        borderColor: "rgba(54, 162, 235, 1)",
-        borderWidth: 1,
-        // Lọc số lượng sinh viên theo từng thang điểm chữ
-        data: ["A+", "A", "B+", "B", "C+", "C", "D+", "D", "F"].map(
-          (grade) => scores.filter((s) => s.diemChu === grade).length,
-        ),
-      },
-    ],
-  };
+  const chartData = thongKe
+    ? {
+        labels: ["A+", "A", "B+", "B", "C+", "C", "D+", "D", "F"],
+        datasets: [
+          {
+            label: "Số lượng Sinh viên",
+            backgroundColor: "rgba(102, 126, 234, 0.8)",
+            borderRadius: 6,
+            data: [
+              thongKe.diemA_Plus,
+              thongKe.diemA,
+              thongKe.diemB_Plus,
+              thongKe.diemB,
+              thongKe.diemC_Plus,
+              thongKe.diemC,
+              thongKe.diemD_Plus,
+              thongKe.diemD,
+              thongKe.diemF,
+            ],
+          },
+        ],
+      }
+    : null;
 
   return (
     <DashboardLayout>
-      <div className="row">
-        <div className="col-md-3">
-          <div className="card shadow-sm border-primary">
-            <div className="card-header bg-primary text-white fw-bold">
-              Danh sách môn dạy
-            </div>
-            <ul className="list-group list-group-flush">
-              {monThiList.length === 0 && (
-                <li className="list-group-item text-muted">Trống</li>
+      <h3 className="fw-bold text-dark mb-4 d-flex align-items-center gap-2">
+        <BarChart3 className="text-primary" /> Thống kê Phổ Điểm
+      </h3>
+
+      <div className="row g-4">
+        {/* CỘT TRÁI: DANH SÁCH LỚP DẠY */}
+        <div className="col-md-4 col-lg-3">
+          <div className="card shadow-sm border-0 rounded-4 bg-white p-3 h-100">
+            <h6 className="fw-bold text-muted mb-3 px-2 text-uppercase small">
+              Lớp đang phụ trách
+            </h6>
+            <div className="d-flex flex-column gap-2">
+              {lopHocList.length === 0 && (
+                <div className="text-muted text-center py-4">
+                  Chưa có lớp nào
+                </div>
               )}
-              {monThiList.map((mt) => (
+              {lopHocList.map((lh) => (
                 <button
-                  key={mt.maMonThi}
-                  className={`list-group-item list-group-item-action ${selectedMon?.maMonThi === mt.maMonThi ? "active" : ""}`}
-                  onClick={() => handleSelectMon(mt)}
+                  key={lh.maLopHoc}
+                  className={`btn text-start py-3 px-3 rounded-3 fw-bold transition-all ${
+                    selectedLop?.maLopHoc === lh.maLopHoc
+                      ? "btn-primary shadow-sm"
+                      : "btn-light text-dark hover-shadow border-0"
+                  }`}
+                  onClick={() => handleSelectLop(lh)}
                 >
-                  {mt.tenMonThi}
+                  {lh.monHoc?.tenMonHoc} <br />{" "}
+                  <small className="fw-normal opacity-75">
+                    Mã lớp: #{lh.maLopHoc}
+                  </small>
                 </button>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
 
-        <div className="col-md-9">
-          {selectedMon ? (
-            <div className="card shadow-sm p-4">
-              <h4 className="mb-4 text-primary">
-                📊 Thống kê điểm môn: {selectedMon.tenMonThi}
-              </h4>
+        {/* CỘT PHẢI: BIỂU ĐỒ */}
+        <div className="col-md-8 col-lg-9">
+          {thongKe ? (
+            <div className="card shadow-sm border-0 rounded-4 bg-white p-4 p-md-5 h-100">
+              <h5 className="fw-bold text-dark mb-4">
+                Phổ điểm tổng kết lớp:{" "}
+                <span className="text-primary">
+                  {selectedLop.monHoc?.tenMonHoc}
+                </span>
+              </h5>
 
-              {/* Vùng vẽ biểu đồ */}
-              <div style={{ height: "350px", marginBottom: "30px" }}>
+              <div className="row text-center mb-4 border-bottom pb-4">
+                <div className="col-4 border-end">
+                  <div className="text-muted small fw-bold text-uppercase">
+                    Tổng số Sinh viên
+                  </div>
+                  <h3 className="fw-bold mb-0 text-dark mt-2">
+                    {thongKe.tongSoSinhVien}
+                  </h3>
+                </div>
+                <div className="col-4 border-end">
+                  <div className="text-muted small fw-bold text-uppercase">
+                    {"Tỉ lệ Đạt (>= 4.0)"}
+                  </div>
+                  <h3 className="fw-bold mb-0 text-success mt-2">
+                    {thongKe.tiLeDat}%
+                  </h3>
+                </div>
+                <div className="col-4">
+                  <div className="text-muted small fw-bold text-uppercase">
+                    Số SV thi lại (Điểm F)
+                  </div>
+                  <h3 className="fw-bold mb-0 text-danger mt-2">
+                    {thongKe.diemF}
+                  </h3>
+                </div>
+              </div>
+
+              <div style={{ height: "350px", width: "100%" }}>
                 <Bar
                   data={chartData}
                   options={{
                     maintainAspectRatio: false,
-                    plugins: {
-                      title: { display: true, text: "Phổ điểm sinh viên" },
-                      legend: { display: false },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                      y: { beginAtZero: true, ticks: { precision: 0 } },
+                      x: { grid: { display: false } },
                     },
                   }}
                 />
               </div>
-
-              <hr />
-              <h5 className="mt-3">
-                Danh sách bảng điểm chi tiết ({scores.length} sinh viên đã nhập
-                điểm)
-              </h5>
-              <table className="table table-bordered table-striped mt-3 align-middle">
-                <thead className="table-dark text-center">
-                  <tr>
-                    <th>MSV</th>
-                    <th>Họ tên</th>
-                    <th>Điểm TB</th>
-                    <th>Điểm Chữ</th>
-                  </tr>
-                </thead>
-                <tbody className="text-center">
-                  {scores.length === 0 ? (
-                    <tr>
-                      <td colSpan="4" className="text-center text-muted">
-                        Chưa có dữ liệu điểm môn này.
-                      </td>
-                    </tr>
-                  ) : (
-                    scores.map((s) => (
-                      <tr key={s.id}>
-                        <td>{s.sinhVien?.msv}</td>
-                        <td className="text-start">{s.sinhVien?.hoTen}</td>
-                        <td className="fw-bold">{s.diemTb}</td>
-                        <td className="fw-bold text-danger fs-5">
-                          {s.diemChu}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
             </div>
           ) : (
-            <div className="alert alert-info">
-              👈 Vui lòng chọn một môn học ở danh sách bên trái để xem thống kê.
+            <div className="card shadow-sm border-0 rounded-4 bg-white p-5 text-center d-flex flex-column justify-content-center align-items-center h-100">
+              <div className="display-1 opacity-25 mb-3 text-primary">
+                <BarChart3 size={80} />
+              </div>
+              <h4 className="text-muted fw-bold">Vui lòng chọn lớp học</h4>
+              <p className="text-muted">
+                Chọn một lớp học ở danh sách bên trái để xem biểu đồ phổ điểm.
+              </p>
             </div>
           )}
         </div>

@@ -1,40 +1,35 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-
+import ProtectedRoute from "./auth/ProtectedRoute"; // [cite: 710]
 import Login from "./pages/Login";
-import ProtectedRoute from "./auth/ProtectedRoute";
 
-// home pages
+// Admin Pages
 import AdminHome from "./pages/admin/AdminHome";
-import TeacherHome from "./pages/teacher/TeacherHome";
-import StudentHome from "./pages/student/StudentHome";
-
-// ADMIN PAGES
-import AdminUserCreate from "./pages/admin/AdminUserCreate";
+import KhoaPage from "./pages/admin/KhoaPage";
+import HocKyPage from "./pages/admin/HocKyPage";
+import MonHocPage from "./pages/admin/MonHocPage";
 import UserManagePage from "./pages/admin/UserManagePage";
-
 import SinhVienPage from "./pages/admin/SinhVienPage";
 import GiaoVienPage from "./pages/admin/GiaoVienPage";
-import KhoaPage from "./pages/admin/KhoaPage";
-import MonHocPage from "./pages/admin/MonHocPage";
-import HocKyPage from "./pages/admin/HocKyPage";
 import LopHocPage from "./pages/admin/LopHocPage";
-import MonThiPage from "./pages/admin/MonThiPage";
 import KiThiPage from "./pages/admin/KiThiPage";
+import LichThiPage from "./pages/admin/LichThiPage";
 import DiemPage from "./pages/admin/DiemPage";
 
+// Teacher & Student
+import TeacherHome from "./pages/teacher/TeacherHome";
 import TeacherNhapDiem from "./pages/teacher/TeacherNhapDiem";
 import TeacherXemDiem from "./pages/teacher/TeacherXemDiem";
+import StudentHome from "./pages/student/StudentHome";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
-
         <Route path="/login" element={<Login />} />
 
-        {/* ADMIN */}
+        {/* ADMIN ROUTES */}
         <Route
           path="/admin"
           element={
@@ -43,16 +38,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute allowRoles={["ADMIN"]}>
-              <AdminUserCreate />
-            </ProtectedRoute>
-          }
-        />
-
         <Route
           path="/admin/user-manage"
           element={
@@ -61,25 +46,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/admin/sinh-vien"
-          element={
-            <ProtectedRoute allowRoles={["ADMIN"]}>
-              <SinhVienPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/giao-vien"
-          element={
-            <ProtectedRoute allowRoles={["ADMIN"]}>
-              <GiaoVienPage />
-            </ProtectedRoute>
-          }
-        />
-
         <Route
           path="/admin/khoa"
           element={
@@ -88,16 +54,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/admin/mon-hoc"
-          element={
-            <ProtectedRoute allowRoles={["ADMIN"]}>
-              <MonHocPage />
-            </ProtectedRoute>
-          }
-        />
-
         <Route
           path="/admin/hoc-ky"
           element={
@@ -106,7 +62,30 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/admin/mon-hoc"
+          element={
+            <ProtectedRoute allowRoles={["ADMIN"]}>
+              <MonHocPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/sinh-vien"
+          element={
+            <ProtectedRoute allowRoles={["ADMIN"]}>
+              <SinhVienPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/giao-vien"
+          element={
+            <ProtectedRoute allowRoles={["ADMIN"]}>
+              <GiaoVienPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/admin/lop-hoc"
           element={
@@ -115,21 +94,19 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/admin/mon-thi"
-          element={
-            <ProtectedRoute allowRoles={["ADMIN"]}>
-              <MonThiPage />
-            </ProtectedRoute>
-          }
-        />
-
         <Route
           path="/admin/ki-thi"
           element={
             <ProtectedRoute allowRoles={["ADMIN"]}>
               <KiThiPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/lich-thi"
+          element={
+            <ProtectedRoute allowRoles={["ADMIN"]}>
+              <LichThiPage />
             </ProtectedRoute>
           }
         />
@@ -142,6 +119,7 @@ export default function App() {
           }
         />
 
+        {/* TEACHER ROUTES */}
         <Route
           path="/teacher"
           element={
@@ -150,8 +128,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* THÊM ROUTE NHẬP ĐIỂM */}
         <Route
           path="/teacher/nhap-diem"
           element={
@@ -160,8 +136,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* THÊM ROUTE XEM ĐIỂM */}
         <Route
           path="/teacher/xem-diem"
           element={
@@ -170,8 +144,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* STUDENT */}
+        {/* STUDENT ROUTES */}
         <Route
           path="/student"
           element={

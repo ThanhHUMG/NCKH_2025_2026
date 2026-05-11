@@ -1,58 +1,39 @@
 package com.nckh.htql_thi.presentation.controller;
 
 import com.nckh.htql_thi.application.port.in.ManageTeacherUseCase;
-import com.nckh.htql_thi.domain.entity.DiemThi;
-import com.nckh.htql_thi.domain.entity.MonThi;
-import com.nckh.htql_thi.domain.entity.LopHoc;
+import com.nckh.htql_thi.domain.entity.*;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/teacher")
 @RequiredArgsConstructor
 public class TeacherController {
-
     private final ManageTeacherUseCase teacherUseCase;
 
-    @GetMapping("/mon-thi")
-    public ResponseEntity<List<MonThi>> getMyMonThi(Authentication authentication) {
-        return ResponseEntity.ok(teacherUseCase.getMyMonThi(authentication.getName()));
+    @GetMapping("/me")
+    public ResponseEntity<GiaoVien> getMyInfo(Authentication auth) {
+        return ResponseEntity.ok(teacherUseCase.getMyInfo(auth.getName()));
     }
 
-    @GetMapping("/mon-thi/{maMonThi}/scores")
-    public ResponseEntity<List<DiemThi>> getScores(Authentication authentication,
-                                                   @PathVariable Long maMonThi) {
-        return ResponseEntity.ok(teacherUseCase.getScoresOfMonThi(authentication.getName(), maMonThi));
-    }
-
-    @PostMapping("/mon-thi/{maMonThi}/nhap-diem")
-    public ResponseEntity<DiemThi> nhapDiem(Authentication authentication,
-                                            @PathVariable Long maMonThi,
-            @RequestBody NhapDiemRequest request) {
-
-        return ResponseEntity.ok(
-                teacherUseCase.nhapDiem(authentication.getName(),
-                        maMonThi,
-                        request.getMsv(),
-                        request.getDiemA(),
-                        request.getDiemB(),
-                        request.getDiemC()));
-    }
     @GetMapping("/lop-hoc")
-    public ResponseEntity<List<LopHoc>> getMyLopHoc(Authentication authentication) {
-        return ResponseEntity.ok(teacherUseCase.getMyLopHoc(authentication.getName()));
+    public ResponseEntity<List<LopHoc>> getMyLopHoc(Authentication auth) {
+        return ResponseEntity.ok(teacherUseCase.getMyLopHoc(auth.getName()));
     }
 
-    @Data
-    public static class NhapDiemRequest {
-        private Long msv;
-        private Double diemA;
-        private Double diemB;
-        private Double diemC;
+    @GetMapping("/lich-thi")
+    public ResponseEntity<List<LichThi>> getMyLichThi(Authentication auth) {
+        return ResponseEntity.ok(teacherUseCase.getMyLichThi(auth.getName()));
     }
+
+    @PostMapping("/lop-hoc/{maLopHoc}/nhap-diem-bc")
+    public ResponseEntity<DiemThi> nhapDiemBC(Authentication auth, @PathVariable Long maLopHoc, @RequestBody NhapDiemBCRequest request) {
+        return ResponseEntity.ok(teacherUseCase.nhapDiemBC(auth.getName(), maLopHoc, request.getMsv(), request.getDiemB(), request.getDiemC()));
+    }
+
+    @Data public static class NhapDiemBCRequest { private Long msv; private Double diemB; private Double diemC; }
 }

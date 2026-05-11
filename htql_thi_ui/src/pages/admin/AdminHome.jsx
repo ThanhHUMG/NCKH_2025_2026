@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
-import DashboardLayout from "../../layout/DashboardLayout";
-import axiosClient from "../../api/axiosClient";
+import DashboardLayout from "../../layout/DashboardLayout"; // [cite: 735]
+import axiosClient from "../../api/axiosClient"; // [cite: 692]
+import {
+  Users,
+  GraduationCap,
+  School,
+  ClipboardCheck,
+  ArrowRight,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function AdminHome() {
@@ -22,39 +29,39 @@ export default function AdminHome() {
           kt: kt.data.length,
         });
       } catch (e) {
-        console.error("Lỗi tải thống kê");
+        console.error("Lỗi thống kê");
       }
     };
     loadStats();
   }, []);
 
-  const cardData = [
+  const cards = [
     {
-      title: "Sinh viên",
+      title: "Sinh Viên",
       count: stats.sv,
-      color: "primary",
-      icon: "🎓",
+      icon: <GraduationCap size={28} />,
+      color: "#4e73df",
       link: "/admin/sinh-vien",
     },
     {
-      title: "Giáo viên",
+      title: "Giáo Viên",
       count: stats.gv,
-      color: "success",
-      icon: "👨‍🏫",
+      icon: <Users size={28} />,
+      color: "#1cc88a",
       link: "/admin/giao-vien",
     },
     {
-      title: "Lớp học",
+      title: "Lớp Học",
       count: stats.lh,
-      color: "warning text-dark",
-      icon: "🏫",
+      icon: <School size={28} />,
+      color: "#f6c23e",
       link: "/admin/lop-hoc",
     },
     {
-      title: "Kỳ thi",
+      title: "Kỳ Thi",
       count: stats.kt,
-      color: "danger",
-      icon: "🏆",
+      icon: <ClipboardCheck size={28} />,
+      color: "#e74a3b",
       link: "/admin/ki-thi",
     },
   ];
@@ -62,48 +69,40 @@ export default function AdminHome() {
   return (
     <DashboardLayout>
       <div className="mb-4">
-        <h3 className="fw-bold text-dark">👋 Chào mừng Quản trị viên!</h3>
+        <h3 className="fw-bold text-dark">Bảng Điều Khiển Admin</h3>
         <p className="text-muted">
-          Hệ thống Quản lý Điểm thi hiện đang hoạt động ổn định.
+          Chào mừng quay trở lại hệ thống quản lý đào tạo.
         </p>
       </div>
 
       <div className="row g-4 mb-5">
-        {cardData.map((item, idx) => (
-          <div className="col-md-3" key={idx}>
-            <div
-              className={`card border-0 shadow-sm bg-${item.color.split(" ")[0]} h-100 text-white`}
-            >
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <h6 className="text-uppercase small mb-1">{item.title}</h6>
-                    <h2 className="fw-bold mb-0">{item.count}</h2>
+        {cards.map((c, i) => (
+          <div className="col-md-6 col-xl-3" key={i}>
+            <div className="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+              <div className="card-body p-4">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <div
+                    className="p-3 rounded-3"
+                    style={{ background: `${c.color}15`, color: c.color }}
+                  >
+                    {c.icon}
                   </div>
-                  <div className="fs-1 opacity-50">{item.icon}</div>
+                  <h3 className="fw-bold mb-0">{c.count}</h3>
                 </div>
+                <h6 className="text-muted small text-uppercase fw-bold mb-3">
+                  {c.title}
+                </h6>
                 <Link
-                  to={item.link}
-                  className="text-white small text-decoration-none mt-3 d-block border-top pt-2 opacity-75"
+                  to={c.link}
+                  className="text-decoration-none small fw-bold d-flex align-items-center gap-1"
+                  style={{ color: c.color }}
                 >
-                  Xem chi tiết →
+                  Chi tiết <ArrowRight size={14} />
                 </Link>
               </div>
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="card shadow-sm border-0 p-4 bg-light text-center py-5">
-        <h4 className="fw-bold">Hành động nhanh</h4>
-        <div className="d-flex justify-content-center gap-3 mt-3">
-          <Link to="/admin/users" className="btn btn-primary px-4">
-            ➕ Cấp tài khoản mới
-          </Link>
-          <Link to="/admin/diem" className="btn btn-outline-dark px-4">
-            📝 Quản lý điểm toàn trường
-          </Link>
-        </div>
       </div>
     </DashboardLayout>
   );

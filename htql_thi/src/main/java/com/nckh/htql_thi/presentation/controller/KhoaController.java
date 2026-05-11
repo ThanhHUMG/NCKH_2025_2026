@@ -6,35 +6,25 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/khoa")
 @RequiredArgsConstructor
 public class KhoaController {
-
     private final ManageKhoaUseCase khoaUseCase;
 
     @GetMapping
-    public ResponseEntity<List<Khoa>> getAll() {
-        return ResponseEntity.ok(khoaUseCase.getAllKhoa());
-    }
+    public ResponseEntity<List<Khoa>> getAll() { return ResponseEntity.ok(khoaUseCase.getAllKhoa()); }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Khoa> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(khoaUseCase.getKhoaById(id));
-    }
+    public ResponseEntity<Khoa> getById(@PathVariable Long id) { return ResponseEntity.ok(khoaUseCase.getKhoaById(id)); }
 
     @PostMapping
-    public ResponseEntity<Khoa> create(@RequestBody Khoa khoa) {
-        return ResponseEntity.ok(khoaUseCase.createKhoa(khoa));
-    }
+    public ResponseEntity<Khoa> create(@RequestBody Khoa khoa) { return ResponseEntity.ok(khoaUseCase.createKhoa(khoa)); }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Khoa> update(@PathVariable Long id, @RequestBody Khoa khoa) {
-        return ResponseEntity.ok(khoaUseCase.updateKhoa(id, khoa));
-    }
+    public ResponseEntity<Khoa> update(@PathVariable Long id, @RequestBody Khoa khoa) { return ResponseEntity.ok(khoaUseCase.updateKhoa(id, khoa)); }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(@PathVariable Long id) {

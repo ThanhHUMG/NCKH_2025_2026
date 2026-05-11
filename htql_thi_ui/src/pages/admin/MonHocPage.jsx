@@ -1,242 +1,165 @@
 import React, { useEffect, useState } from "react";
 import DashboardLayout from "../../layout/DashboardLayout";
 import axiosClient from "../../api/axiosClient";
+import ImportExcelBox from "../../components/ImportExcelBox";
+import Pagination from "../../components/Pagination";
+import { BookOpen, Edit, Trash2 } from "lucide-react";
 
 export default function MonHocPage() {
-  const [monHocList, setMonHocList] = useState([]);
-  const [khoaList, setKhoaList] = useState([]);
+  const [list, setList] = useState([]);
+  const [khoas, setKhoas] = useState([]);
   const [form, setForm] = useState({ tenMonHoc: "", tinChi: "", maKhoa: "" });
   const [editingId, setEditingId] = useState(null);
-  const [excelFile, setExcelFile] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const loadData = async () => {
-    try {
-      const [mh, k] = await Promise.all([
-        axiosClient.get("/api/mon-hoc"),
-        axiosClient.get("/api/khoa"),
-      ]);
-      setMonHocList(mh.data);
-      setKhoaList(k.data);
-    } catch (error) {
-      console.error("Lỗi tải dữ liệu môn học");
-    }
+    const [mh, k] = await Promise.all([
+      axiosClient.get("/api/mon-hoc"),
+      axiosClient.get("/api/khoa"),
+    ]);
+    setList(mh.data);
+    setKhoas(k.data);
   };
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const resetForm = () => {
-    setForm({ tenMonHoc: "", tinChi: "", maKhoa: "" });
-    setEditingId(null);
-  };
-
-  const handleSubmit = async () => {
-    if (!form.tenMonHoc || !form.tinChi || !form.maKhoa) {
-      alert("⚠️ Vui lòng nhập đầy đủ tên môn, tín chỉ và chọn khoa!");
-      return;
-    }
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     const payload = {
       tenMonHoc: form.tenMonHoc,
       tinChi: Number(form.tinChi),
       khoa: { maKhoa: Number(form.maKhoa) },
     };
-
-    try {
-      if (editingId) {
-        await axiosClient.put(`/api/mon-hoc/${editingId}`, payload);
-        alert("✅ Cập nhật môn học thành công!");
-      } else {
-        await axiosClient.post("/api/mon-hoc", payload);
-        alert("✅ Thêm môn học thành công!");
-      }
-      resetForm();
-      loadData();
-    } catch (error) {
-      alert("❌ Lỗi khi lưu môn học!");
-    }
+    if (editingId) await axiosClient.put(`/api/mon-hoc/${editingId}`, payload);
+    else await axiosClient.post("/api/mon-hoc", payload);
+    setForm({ tenMonHoc: "", tinChi: "", maKhoa: "" });
+    setEditingId(null);
+    loadData();
   };
 
-  // 👇 HÀM XỬ LÝ XÓA ĐÃ ĐƯỢC THÊM LẠI 👇
-  const handleDelete = async (id) => {
-    if (
-      !window.confirm(
-        "⚠️ Bạn có chắc chắn muốn xóa môn học này? Hành động này sẽ ảnh hưởng đến các lớp học liên quan.",
-      )
-    )
-      return;
-    try {
-      await axiosClient.delete(`/api/mon-hoc/${id}`);
-      alert("✅ Xóa môn học thành công!");
-      loadData();
-    } catch (error) {
-      alert(
-        "❌ Không thể xóa môn học này (có thể do đang có lớp học sử dụng)!",
-      );
-    }
-  };
-
-  const handleEdit = (mh) => {
-    setEditingId(mh.maMonHoc);
-    setForm({
-      tenMonHoc: mh.tenMonHoc,
-      tinChi: mh.tinChi,
-      maKhoa: mh.khoa?.maKhoa || "",
-    });
-  };
-
-  const handleImportExcel = async () => {
-    if (!excelFile) return alert("⚠️ Chọn file Excel trước!");
-    const formData = new FormData();
-    formData.append("file", excelFile);
-    try {
-      await axiosClient.post("/api/mon-hoc/import-excel", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      alert("✅ Import thành công!");
-      setExcelFile(null);
-      loadData();
-    } catch (err) {
-      alert("❌ Lỗi Import!");
-    }
-  };
+  const currentData = list.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   return (
     <DashboardLayout>
-      <h3 className="text-primary fw-bold mb-4">📖 Quản lý Môn Học</h3>
-      <div className="row">
-        {/* CỘT TRÁI: FORM & IMPORT */}
-        <div className="col-md-4 mb-4">
-          <div className="card shadow-sm border-0 mb-4 bg-light p-3">
-            <h5 className="fw-bold mb-3">
-              {editingId ? "✏️ Sửa môn học" : "➕ Thêm môn học"}
+      <h3 className="fw-bold text-dark mb-4 d-flex align-items-center gap-2">
+        <BookOpen className="text-success" /> Quản lý Môn Học
+      </h3>
+      <div className="row g-4">
+        <div className="col-lg-4">
+          <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <h5 className="fw-bold mb-4">
+              {editingId ? "Sửa Môn Học" : "Thêm Môn Học"}
             </h5>
-            <div className="mb-2">
-              <label className="small fw-bold text-muted">Tên môn học</label>
+            <form onSubmit={handleSubmit}>
               <input
-                className="form-control"
-                placeholder="Tên môn học"
+                type="text"
+                className="form-control rounded-3 mb-2"
+                placeholder="Tên môn"
                 value={form.tenMonHoc}
                 onChange={(e) =>
                   setForm({ ...form, tenMonHoc: e.target.value })
                 }
+                required
               />
-            </div>
-            <div className="mb-2">
-              <label className="small fw-bold text-muted">Số tín chỉ</label>
               <input
-                className="form-control"
                 type="number"
+                className="form-control rounded-3 mb-2"
                 placeholder="Số tín chỉ"
                 value={form.tinChi}
                 onChange={(e) => setForm({ ...form, tinChi: e.target.value })}
+                required
               />
-            </div>
-            <div className="mb-3">
-              <label className="small fw-bold text-muted">Khoa phụ trách</label>
               <select
-                className="form-select"
+                className="form-select rounded-3 mb-3"
                 value={form.maKhoa}
                 onChange={(e) => setForm({ ...form, maKhoa: e.target.value })}
+                required
               >
                 <option value="">-- Chọn khoa --</option>
-                {khoaList.map((k) => (
+                {khoas.map((k) => (
                   <option key={k.maKhoa} value={k.maKhoa}>
                     {k.tenKhoa}
                   </option>
                 ))}
               </select>
-            </div>
-            <div className="d-grid gap-2">
               <button
-                className="btn btn-primary fw-bold"
-                onClick={handleSubmit}
+                type="submit"
+                className="btn btn-success w-100 rounded-3 fw-bold py-2 shadow-sm"
               >
-                {editingId ? "Lưu cập nhật" : "Tạo môn học"}
+                {editingId ? "Cập nhật" : "Tạo mới"}
               </button>
-              {editingId && (
-                <button
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={resetForm}
-                >
-                  Hủy
-                </button>
-              )}
-            </div>
+            </form>
           </div>
-
-          <div className="card shadow-sm border-0 p-3">
-            <h6 className="fw-bold text-info mb-3">📁 Import Excel</h6>
-            <input
-              type="file"
-              className="form-control form-control-sm mb-2"
-              onChange={(e) => setExcelFile(e.target.files[0])}
-            />
-            <button
-              className="btn btn-info text-white btn-sm w-100 fw-bold"
-              onClick={handleImportExcel}
-            >
-              🚀 Tải lên
-            </button>
-          </div>
+          <ImportExcelBox
+            endpoint="/api/mon-hoc/import-excel"
+            onSuccess={loadData}
+          />
         </div>
-
-        {/* CỘT PHẢI: DANH SÁCH */}
-        <div className="col-md-8">
-          <div className="card shadow-sm border-0">
-            <div className="table-responsive" style={{ maxHeight: "700px" }}>
-              <table className="table table-hover align-middle text-center mb-0">
-                <thead className="table-primary sticky-top">
-                  <tr>
-                    <th>Mã</th>
-                    <th className="text-start">Tên môn học</th>
-                    <th>Khoa</th>
-                    <th>Tín chỉ</th>
-                    <th style={{ minWidth: "100px" }}>Thao tác</th>
+        <div className="col-lg-8">
+          <div className="card border-0 shadow-sm rounded-4 p-4">
+            <table className="table table-hover align-middle mb-0">
+              <thead className="table-light small text-uppercase">
+                <tr>
+                  <th>Tên Môn</th>
+                  <th>Khoa</th>
+                  <th>Tín chỉ</th>
+                  <th className="text-center">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentData.map((m) => (
+                  <tr key={m.maMonHoc}>
+                    <td className="fw-bold">{m.tenMonHoc}</td>
+                    <td>{m.khoa?.tenKhoa}</td>
+                    <td>
+                      <span className="badge bg-light text-dark border">
+                        {m.tinChi} TC
+                      </span>
+                    </td>
+                    <td className="text-center">
+                      <button
+                        className="btn btn-sm btn-light text-primary me-2"
+                        onClick={() => {
+                          setEditingId(m.maMonHoc);
+                          setForm({
+                            tenMonHoc: m.tenMonHoc,
+                            tinChi: m.tinChi,
+                            maKhoa: m.khoa?.maKhoa,
+                          });
+                        }}
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        className="btn btn-sm btn-light text-danger"
+                        onClick={async () => {
+                          if (window.confirm("Xóa?")) {
+                            await axiosClient.delete(
+                              `/api/mon-hoc/${m.maMonHoc}`,
+                            );
+                            loadData();
+                          }
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {monHocList.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="py-4 text-muted">
-                        Chưa có dữ liệu môn học.
-                      </td>
-                    </tr>
-                  ) : (
-                    monHocList.map((mh) => (
-                      <tr key={mh.maMonHoc}>
-                        <td className="text-muted">#{mh.maMonHoc}</td>
-                        <td className="text-start fw-bold">{mh.tenMonHoc}</td>
-                        <td className="small">{mh.khoa?.tenKhoa}</td>
-                        <td>
-                          <span className="badge bg-secondary">
-                            {mh.tinChi} TC
-                          </span>
-                        </td>
-                        <td>
-                          <div className="btn-group">
-                            <button
-                              className="btn btn-sm btn-outline-warning"
-                              onClick={() => handleEdit(mh)}
-                            >
-                              ✏️
-                            </button>
-                            {/* 👇 NÚT XÓA ĐÃ ĐƯỢC THÊM LẠI Ở ĐÂY 👇 */}
-                            <button
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => handleDelete(mh.maMonHoc)}
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={list.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </div>
       </div>

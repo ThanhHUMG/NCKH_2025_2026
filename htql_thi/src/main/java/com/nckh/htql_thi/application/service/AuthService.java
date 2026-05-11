@@ -5,7 +5,8 @@ import com.nckh.htql_thi.application.port.in.ManageAuthUseCase;
 import com.nckh.htql_thi.application.port.out.UserPort;
 import com.nckh.htql_thi.domain.entity.User;
 import com.nckh.htql_thi.infrastructure.security.JwtService;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,9 +16,7 @@ public class AuthService implements ManageAuthUseCase {
     private final UserPort userPort;
     private final JwtService jwtService;
 
-    public AuthService(AuthenticationManager authenticationManager,
-                       UserPort userPort,
-                       JwtService jwtService) {
+    public AuthService(AuthenticationManager authenticationManager, UserPort userPort, JwtService jwtService) {
         this.authenticationManager = authenticationManager;
         this.userPort = userPort;
         this.jwtService = jwtService;
@@ -25,7 +24,6 @@ public class AuthService implements ManageAuthUseCase {
 
     @Override
     public AuthResponse login(String username, String password) {
-
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password)
         );

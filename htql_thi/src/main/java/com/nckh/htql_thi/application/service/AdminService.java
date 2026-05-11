@@ -19,10 +19,7 @@ public class AdminService implements ManageAdminUseCase {
     private final GiaoVienPort giaoVienPort;
     private final PasswordEncoder passwordEncoder;
 
-    public AdminService(UserPort userPort,
-                        SinhVienPort sinhVienPort,
-                        GiaoVienPort giaoVienPort,
-                        PasswordEncoder passwordEncoder) {
+    public AdminService(UserPort userPort, SinhVienPort sinhVienPort, GiaoVienPort giaoVienPort, PasswordEncoder passwordEncoder) {
         this.userPort = userPort;
         this.sinhVienPort = sinhVienPort;
         this.giaoVienPort = giaoVienPort;
@@ -31,21 +28,8 @@ public class AdminService implements ManageAdminUseCase {
 
     @Override
     public User createStudentAccount(String username, String password, Long msv) {
-
-        if (username == null || username.trim().isEmpty()) {
-            throw new RuntimeException("Username không được để trống");
-        }
-
-        if (password == null || password.trim().isEmpty()) {
-            throw new RuntimeException("Password không được để trống");
-        }
-
-        if (userPort.existsByUsername(username.trim())) {
-            throw new RuntimeException("Username đã tồn tại");
-        }
-
-        SinhVien sv = sinhVienPort.timTheoId(msv)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên"));
+        if (userPort.existsByUsername(username.trim())) throw new RuntimeException("Username đã tồn tại");
+        SinhVien sv = sinhVienPort.timTheoId(msv).orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên"));
 
         User user = User.builder()
                 .username(username.trim())
@@ -53,27 +37,13 @@ public class AdminService implements ManageAdminUseCase {
                 .role(Role.STUDENT)
                 .sinhVien(sv)
                 .build();
-
         return userPort.save(user);
     }
 
     @Override
     public User createTeacherAccount(String username, String password, Long maGiaoVien) {
-
-        if (username == null || username.trim().isEmpty()) {
-            throw new RuntimeException("Username không được để trống");
-        }
-
-        if (password == null || password.trim().isEmpty()) {
-            throw new RuntimeException("Password không được để trống");
-        }
-
-        if (userPort.existsByUsername(username.trim())) {
-            throw new RuntimeException("Username đã tồn tại");
-        }
-
-        GiaoVien gv = giaoVienPort.timTheoId(maGiaoVien)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy giáo viên"));
+        if (userPort.existsByUsername(username.trim())) throw new RuntimeException("Username đã tồn tại");
+        GiaoVien gv = giaoVienPort.timTheoId(maGiaoVien).orElseThrow(() -> new RuntimeException("Không tìm thấy giáo viên"));
 
         User user = User.builder()
                 .username(username.trim())
@@ -81,7 +51,6 @@ public class AdminService implements ManageAdminUseCase {
                 .role(Role.TEACHER)
                 .giaoVien(gv)
                 .build();
-
         return userPort.save(user);
     }
 }

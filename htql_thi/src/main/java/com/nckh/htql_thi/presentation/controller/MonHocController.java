@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 
 @RestController
@@ -17,23 +16,23 @@ public class MonHocController {
     private final ManageMonHocUseCase monHocUseCase;
 
     @GetMapping
-    public ResponseEntity<List<MonHoc>> getAll() {
-        return ResponseEntity.ok(monHocUseCase.getAllMonHoc());
+    public ResponseEntity<List<MonHoc>> getAll() { 
+        return ResponseEntity.ok(monHocUseCase.getAllMonHoc()); 
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MonHoc> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(monHocUseCase.getMonHocById(id));
+    public ResponseEntity<MonHoc> getById(@PathVariable Long id) { 
+        return ResponseEntity.ok(monHocUseCase.getMonHocById(id)); 
     }
 
     @PostMapping
-    public ResponseEntity<MonHoc> create(@RequestBody MonHoc monHoc) {
-        return ResponseEntity.ok(monHocUseCase.createMonHoc(monHoc));
+    public ResponseEntity<MonHoc> create(@RequestBody MonHoc monHoc) { 
+        return ResponseEntity.ok(monHocUseCase.createMonHoc(monHoc)); 
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MonHoc> update(@PathVariable Long id, @RequestBody MonHoc monHoc) {
-        return ResponseEntity.ok(monHocUseCase.updateMonHoc(id, monHoc));
+    public ResponseEntity<MonHoc> update(@PathVariable Long id, @RequestBody MonHoc monHoc) { 
+        return ResponseEntity.ok(monHocUseCase.updateMonHoc(id, monHoc)); 
     }
 
     @DeleteMapping("/{id}")

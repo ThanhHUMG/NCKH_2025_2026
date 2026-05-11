@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 
 @RestController
@@ -17,23 +16,23 @@ public class SinhVienController {
     private final ManageSinhVienUseCase sinhVienUseCase;
 
     @GetMapping
-    public ResponseEntity<List<SinhVien>> getAll() {
-        return ResponseEntity.ok(sinhVienUseCase.getAllSinhVien());
+    public ResponseEntity<List<SinhVien>> getAll() { 
+        return ResponseEntity.ok(sinhVienUseCase.getAllSinhVien()); 
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<SinhVien> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(sinhVienUseCase.getSinhVienById(id));
+    public ResponseEntity<SinhVien> getById(@PathVariable Long id) { 
+        return ResponseEntity.ok(sinhVienUseCase.getSinhVienById(id)); 
     }
 
     @PostMapping
-    public ResponseEntity<SinhVien> create(@RequestBody SinhVien sinhVien) {
-        return ResponseEntity.ok(sinhVienUseCase.createSinhVien(sinhVien));
+    public ResponseEntity<SinhVien> create(@RequestBody SinhVien sinhVien) { 
+        return ResponseEntity.ok(sinhVienUseCase.createSinhVien(sinhVien)); 
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SinhVien> update(@PathVariable Long id, @RequestBody SinhVien sinhVien) {
-        return ResponseEntity.ok(sinhVienUseCase.updateSinhVien(id, sinhVien));
+    public ResponseEntity<SinhVien> update(@PathVariable Long id, @RequestBody SinhVien sinhVien) { 
+        return ResponseEntity.ok(sinhVienUseCase.updateSinhVien(id, sinhVien)); 
     }
 
     @DeleteMapping("/{id}")

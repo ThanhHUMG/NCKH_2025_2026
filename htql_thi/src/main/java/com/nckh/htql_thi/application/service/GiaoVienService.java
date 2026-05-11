@@ -26,39 +26,26 @@ public class GiaoVienService implements ManageGiaoVienUseCase {
     }
 
     @Override
-    public List<GiaoVien> getAllGiaoVien() {
-        return giaoVienPort.layTatCa();
-    }
+    public List<GiaoVien> getAllGiaoVien() { return giaoVienPort.layTatCa(); }
 
     @Override
     public GiaoVien getGiaoVienById(Long id) {
-        return giaoVienPort.timTheoId(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy giáo viên ID: " + id));
+        return giaoVienPort.timTheoId(id).orElseThrow(() -> new RuntimeException("Không tìm thấy giáo viên ID: " + id));
     }
 
     @Override
     public GiaoVien createGiaoVien(GiaoVien giaoVien) {
-        if (giaoVien.getHoTen() == null || giaoVien.getHoTen().trim().isEmpty()) {
-            throw new RuntimeException("Họ tên giáo viên không được để trống");
-        }
-
-        if (giaoVien.getKhoa() == null) {
-            throw new RuntimeException("Giáo viên phải thuộc khoa");
-        }
-
+        if (giaoVien.getHoTen() == null || giaoVien.getHoTen().trim().isEmpty()) throw new RuntimeException("Họ tên không được để trống");
+        if (giaoVien.getKhoa() == null) throw new RuntimeException("Giáo viên phải thuộc khoa");
         giaoVien.setMaGiaoVien(null);
         giaoVien.setHoTen(giaoVien.getHoTen().trim());
-
         return giaoVienPort.luu(giaoVien);
     }
 
     @Override
     public GiaoVien updateGiaoVien(Long id, GiaoVien details) {
         GiaoVien gv = getGiaoVienById(id);
-
-        if (details.getHoTen() == null || details.getHoTen().trim().isEmpty()) {
-            throw new RuntimeException("Họ tên giáo viên không được để trống");
-        }
+        if (details.getHoTen() == null || details.getHoTen().trim().isEmpty()) throw new RuntimeException("Họ tên không được để trống");
 
         gv.setHoTen(details.getHoTen().trim());
         gv.setNamSinh(details.getNamSinh());
@@ -67,26 +54,21 @@ public class GiaoVienService implements ManageGiaoVienUseCase {
         gv.setEmail(details.getEmail());
         gv.setDiaChi(details.getDiaChi());
         gv.setKhoa(details.getKhoa());
-
         return giaoVienPort.luu(gv);
     }
 
     @Override
-    public void deleteGiaoVien(Long id) {
-        giaoVienPort.xoa(id);
-    }
+    public void deleteGiaoVien(Long id) { giaoVienPort.xoa(id); }
 
     @Override
     @Transactional
     public void importExcel(InputStream inputStream) {
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-
             Sheet sheet = workbook.getSheetAt(0);
             List<GiaoVien> list = new ArrayList<>();
 
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
-
                 String hoTen = getCellString(row.getCell(0));
                 Integer namSinh = getCellInteger(row.getCell(1));
                 String trinhDo = getCellString(row.getCell(2));
@@ -95,42 +77,19 @@ public class GiaoVienService implements ManageGiaoVienUseCase {
                 String diaChi = getCellString(row.getCell(5));
                 String tenKhoa = getCellString(row.getCell(6));
 
-                if (hoTen == null || hoTen.trim().isEmpty()) continue;
+                if (hoTen == null || hoTen.isEmpty()) continue;
+                if (tenKhoa == null || tenKhoa.isEmpty()) throw new RuntimeException("Dòng " + (row.getRowNum() + 1) + ": Thiếu tên khoa");
 
-                if (tenKhoa == null || tenKhoa.trim().isEmpty()) {
-                    throw new RuntimeException("Dòng " + (row.getRowNum() + 1) + ": Thiếu tên khoa");
-                }
+                Khoa khoa = khoaPort.timTheoTen(tenKhoa.trim()).orElseThrow(() -> new RuntimeException("Không tìm thấy khoa: " + tenKhoa));
+                if (email != null && !email.isEmpty() && giaoVienPort.existsByEmail(email.trim())) continue;
+                if (soDienThoai != null && !soDienThoai.isEmpty() && giaoVienPort.existsBySoDienThoai(soDienThoai.trim())) continue;
 
-                Khoa khoa = khoaPort.timTheoTen(tenKhoa.trim())
-                        .orElseThrow(() -> new RuntimeException(
-                                "Dòng " + (row.getRowNum() + 1) + ": Không tìm thấy khoa: " + tenKhoa));
-
-                if (email != null && !email.trim().isEmpty()) {
-                    if (giaoVienPort.existsByEmail(email.trim())) {
-                        continue;
-                    }
-                }
-
-                if (soDienThoai != null && !soDienThoai.trim().isEmpty()) {
-                    if (giaoVienPort.existsBySoDienThoai(soDienThoai.trim())) {
-                        continue;
-                    }
-                }
-
-                GiaoVien gv = new GiaoVien();
-                gv.setHoTen(hoTen.trim());
-                gv.setNamSinh(namSinh);
-                gv.setTrinhDo(trinhDo);
-                gv.setSoDienThoai(soDienThoai);
-                gv.setEmail(email);
-                gv.setDiaChi(diaChi);
-                gv.setKhoa(khoa);
-
-                list.add(gv);
+                list.add(GiaoVien.builder()
+                        .hoTen(hoTen.trim()).namSinh(namSinh).trinhDo(trinhDo)
+                        .soDienThoai(soDienThoai).email(email).diaChi(diaChi).khoa(khoa)
+                        .build());
             }
-
             giaoVienPort.luuDanhSach(list);
-
         } catch (Exception e) {
             throw new RuntimeException("Lỗi đọc file Excel Giáo Viên: " + e.getMessage());
         }
@@ -138,37 +97,15 @@ public class GiaoVienService implements ManageGiaoVienUseCase {
 
     private String getCellString(Cell cell) {
         if (cell == null) return null;
-
-        if (cell.getCellType() == CellType.STRING) {
-            return cell.getStringCellValue().trim();
-        }
-
-        if (cell.getCellType() == CellType.NUMERIC) {
-            return String.valueOf((long) cell.getNumericCellValue());
-        }
-
-        if (cell.getCellType() == CellType.BOOLEAN) {
-            return String.valueOf(cell.getBooleanCellValue());
-        }
-
-        if (cell.getCellType() == CellType.FORMULA) {
-            try {
-                return cell.getStringCellValue().trim();
-            } catch (Exception e) {
-                return String.valueOf((long) cell.getNumericCellValue());
-            }
-        }
-
+        if (cell.getCellType() == CellType.STRING) return cell.getStringCellValue().trim();
+        if (cell.getCellType() == CellType.NUMERIC) return String.valueOf((long) cell.getNumericCellValue());
         return null;
     }
 
     private Integer getCellInteger(Cell cell) {
         try {
             String val = getCellString(cell);
-            if (val == null || val.isEmpty()) return null;
-            return Integer.parseInt(val);
-        } catch (Exception e) {
-            return null;
-        }
+            return (val == null || val.isEmpty()) ? null : Integer.parseInt(val);
+        } catch (Exception e) { return null; }
     }
 }

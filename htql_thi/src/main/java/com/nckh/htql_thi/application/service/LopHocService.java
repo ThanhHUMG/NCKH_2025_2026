@@ -3,9 +3,12 @@ package com.nckh.htql_thi.application.service;
 import com.nckh.htql_thi.application.port.in.ManageLopHocUseCase;
 import com.nckh.htql_thi.application.port.out.*;
 import com.nckh.htql_thi.domain.entity.*;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,13 +21,7 @@ public class LopHocService implements ManageLopHocUseCase {
     private final HocKiPort hocKiPort;
     private final SinhVienPort sinhVienPort;
 
-    public LopHocService(
-            LopHocPort lopHocPort,
-            MonHocPort monHocPort,
-            GiaoVienPort giaoVienPort,
-            HocKiPort hocKiPort,
-            SinhVienPort sinhVienPort
-    ) {
+    public LopHocService(LopHocPort lopHocPort, MonHocPort monHocPort, GiaoVienPort giaoVienPort, HocKiPort hocKiPort, SinhVienPort sinhVienPort) {
         this.lopHocPort = lopHocPort;
         this.monHocPort = monHocPort;
         this.giaoVienPort = giaoVienPort;
@@ -33,126 +30,70 @@ public class LopHocService implements ManageLopHocUseCase {
     }
 
     @Override
-    public List<LopHoc> getAllLopHoc() {
-        return lopHocPort.layTatCa();
-    }
+    public List<LopHoc> getAllLopHoc() { return lopHocPort.layTatCa(); }
 
     @Override
     public LopHoc getLopHocById(Long id) {
-        return lopHocPort.timTheoId(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học ID: " + id));
+        return lopHocPort.timTheoId(id).orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học"));
     }
 
     @Override
-    @Transactional
     public LopHoc createLopHoc(Long maMonHoc, Long maGiaoVien, Long maHocKi) {
+        MonHoc monHoc = monHocPort.timTheoId(maMonHoc).orElseThrow(() -> new RuntimeException("Không tìm thấy môn học"));
+        GiaoVien giaoVien = giaoVienPort.timTheoId(maGiaoVien).orElseThrow(() -> new RuntimeException("Không tìm thấy giáo viên"));
+        HocKi hocKi = hocKiPort.timTheoId(maHocKi).orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ"));
 
-        MonHoc monHoc = monHocPort.timTheoId(maMonHoc)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học ID: " + maMonHoc));
-
-        GiaoVien giaoVien = giaoVienPort.timTheoId(maGiaoVien)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy giáo viên ID: " + maGiaoVien));
-
-        HocKi hocKi = hocKiPort.timTheoId(maHocKi)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ ID: " + maHocKi));
-
-        if (giaoVien.getKhoa() == null || monHoc.getKhoa() == null) {
-            throw new RuntimeException("Giáo viên và môn học phải thuộc khoa");
-        }
-
-        if (!giaoVien.getKhoa().getMaKhoa().equals(monHoc.getKhoa().getMaKhoa())) {
-            throw new RuntimeException("Giáo viên phải thuộc cùng khoa với môn học");
-        }
-
-        LopHoc lopHoc = new LopHoc();
-        lopHoc.setMonHoc(monHoc);
-        lopHoc.setGiaoVien(giaoVien);
-        lopHoc.setHocKi(hocKi);
-        lopHoc.setDsSinhVien(new ArrayList<>());
-
+        LopHoc lopHoc = LopHoc.builder().monHoc(monHoc).giaoVien(giaoVien).hocKi(hocKi).dsSinhVien(new ArrayList<>()).build();
         return lopHocPort.luu(lopHoc);
     }
 
     @Override
-    @Transactional
     public LopHoc updateLopHoc(Long maLopHoc, Long maMonHoc, Long maGiaoVien, Long maHocKi) {
-
         LopHoc lopHoc = getLopHocById(maLopHoc);
-
-        MonHoc monHoc = monHocPort.timTheoId(maMonHoc)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học ID: " + maMonHoc));
-
-        GiaoVien giaoVien = giaoVienPort.timTheoId(maGiaoVien)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy giáo viên ID: " + maGiaoVien));
-
-        HocKi hocKi = hocKiPort.timTheoId(maHocKi)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ ID: " + maHocKi));
-
-        if (giaoVien.getKhoa() == null || monHoc.getKhoa() == null) {
-            throw new RuntimeException("Giáo viên và môn học phải thuộc khoa");
-        }
-
-        if (!giaoVien.getKhoa().getMaKhoa().equals(monHoc.getKhoa().getMaKhoa())) {
-            throw new RuntimeException("Giáo viên phải thuộc cùng khoa với môn học");
-        }
-
-        lopHoc.setMonHoc(monHoc);
-        lopHoc.setGiaoVien(giaoVien);
-        lopHoc.setHocKi(hocKi);
-
-        return lopHocPort.luu(lopHoc);
-    }
-    @Override
-    @Transactional
-    public LopHoc addSinhVienToLop(Long maLopHoc, List<Long> dsMsv) {
-
-        LopHoc lopHoc = getLopHocById(maLopHoc);
-
-        if (lopHoc.getDsSinhVien() == null) {
-            lopHoc.setDsSinhVien(new ArrayList<>());
-        }
-
-        Khoa khoaMonHoc = lopHoc.getMonHoc().getKhoa();
-        if (khoaMonHoc == null) {
-            throw new RuntimeException("Môn học của lớp này chưa được gán Khoa, không thể đối chiếu.");
-        }
-
-        for (Long msv : dsMsv) {
-            SinhVien sv = sinhVienPort.timTheoId(msv)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên MSV: " + msv));
-
-            if (sv.getKhoa() == null) {
-                throw new RuntimeException("Sinh viên " + sv.getHoTen() + " chưa được gán Khoa.");
-            }
-            if (!sv.getKhoa().getMaKhoa().equals(khoaMonHoc.getMaKhoa())) {
-                throw new RuntimeException("Lỗi: Sinh viên " + sv.getHoTen() + " thuộc khoa " + sv.getKhoa().getTenKhoa() + ", không khớp với khoa " + khoaMonHoc.getTenKhoa() + " của môn học.");
-            }
-
-            if (!lopHoc.getDsSinhVien().contains(sv)) {
-                lopHoc.getDsSinhVien().add(sv);
-            }
-        }
-
+        lopHoc.setMonHoc(monHocPort.timTheoId(maMonHoc).orElseThrow());
+        lopHoc.setGiaoVien(giaoVienPort.timTheoId(maGiaoVien).orElseThrow());
+        lopHoc.setHocKi(hocKiPort.timTheoId(maHocKi).orElseThrow());
         return lopHocPort.luu(lopHoc);
     }
 
     @Override
-    @Transactional
+    public void deleteLopHoc(Long id) { lopHocPort.xoa(id); }
+
+    @Override
     public LopHoc removeSinhVienFromLop(Long maLopHoc, Long msv) {
-
         LopHoc lopHoc = getLopHocById(maLopHoc);
-
-        if (lopHoc.getDsSinhVien() == null) {
-            return lopHoc;
-        }
-
         lopHoc.getDsSinhVien().removeIf(sv -> sv.getMsv().equals(msv));
-
         return lopHocPort.luu(lopHoc);
     }
 
     @Override
-    public void deleteLopHoc(Long id) {
-        lopHocPort.xoa(id);
+    @Transactional
+    public void importSinhVienExcel(Long maLopHoc, InputStream inputStream) {
+        LopHoc lopHoc = getLopHocById(maLopHoc);
+        Khoa khoaMonHoc = lopHoc.getMonHoc().getKhoa();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue;
+                Cell cell = row.getCell(0);
+                if (cell == null) continue;
+                String msvStr = cell.getCellType() == CellType.STRING ? cell.getStringCellValue() : String.valueOf((long) cell.getNumericCellValue());
+                if (msvStr.isEmpty()) continue;
+
+                Long msv = Long.parseLong(msvStr);
+                SinhVien sv = sinhVienPort.timTheoId(msv).orElseThrow(() -> new RuntimeException("Không tìm thấy SV: " + msv));
+
+                if (!sv.getKhoa().getMaKhoa().equals(khoaMonHoc.getMaKhoa())) {
+                    throw new RuntimeException("Sinh viên " + sv.getHoTen() + " không thuộc khoa " + khoaMonHoc.getTenKhoa());
+                }
+
+                boolean exists = lopHoc.getDsSinhVien().stream().anyMatch(s -> s.getMsv().equals(sv.getMsv()));
+                if (!exists) lopHoc.getDsSinhVien().add(sv);
+            }
+            lopHocPort.luu(lopHoc);
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi import Excel: " + e.getMessage());
+        }
     }
 }
