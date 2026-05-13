@@ -6,7 +6,7 @@ import lombok.*;
 @Entity @Table(name = "sinh_vien")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class SinhVienJpaEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
     private Long msv;
     @Column(nullable = false)
     private String hoTen;

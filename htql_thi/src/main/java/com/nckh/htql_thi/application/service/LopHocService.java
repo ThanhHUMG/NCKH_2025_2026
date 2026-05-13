@@ -38,21 +38,34 @@ public class LopHocService implements ManageLopHocUseCase {
     }
 
     @Override
-    public LopHoc createLopHoc(Long maMonHoc, Long maGiaoVien, Long maHocKi) {
-        MonHoc monHoc = monHocPort.timTheoId(maMonHoc).orElseThrow(() -> new RuntimeException("Không tìm thấy môn học"));
-        GiaoVien giaoVien = giaoVienPort.timTheoId(maGiaoVien).orElseThrow(() -> new RuntimeException("Không tìm thấy giáo viên"));
-        HocKi hocKi = hocKiPort.timTheoId(maHocKi).orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ"));
+    public LopHoc createLopHoc(LopHoc req) {
+        MonHoc monHoc = monHocPort.timTheoId(req.getMonHoc().getMaMonHoc()).orElseThrow();
+        GiaoVien giaoVien = giaoVienPort.timTheoId(req.getGiaoVien().getMaGiaoVien()).orElseThrow();
+        HocKi hocKi = hocKiPort.timTheoId(req.getHocKi().getMaHocKi()).orElseThrow();
 
-        LopHoc lopHoc = LopHoc.builder().monHoc(monHoc).giaoVien(giaoVien).hocKi(hocKi).dsSinhVien(new ArrayList<>()).build();
+        LopHoc lopHoc = LopHoc.builder()
+                .monHoc(monHoc).giaoVien(giaoVien).hocKi(hocKi)
+                .nhom(req.getNhom())
+                .phongHoc(req.getPhongHoc())
+                .tietBatDau(req.getTietBatDau())
+                .thoiGian(req.getThoiGian())
+                .dsSinhVien(new ArrayList<>())
+                .build();
         return lopHocPort.luu(lopHoc);
     }
 
     @Override
-    public LopHoc updateLopHoc(Long maLopHoc, Long maMonHoc, Long maGiaoVien, Long maHocKi) {
+    public LopHoc updateLopHoc(Long maLopHoc, LopHoc req) {
         LopHoc lopHoc = getLopHocById(maLopHoc);
-        lopHoc.setMonHoc(monHocPort.timTheoId(maMonHoc).orElseThrow());
-        lopHoc.setGiaoVien(giaoVienPort.timTheoId(maGiaoVien).orElseThrow());
-        lopHoc.setHocKi(hocKiPort.timTheoId(maHocKi).orElseThrow());
+        lopHoc.setMonHoc(monHocPort.timTheoId(req.getMonHoc().getMaMonHoc()).orElseThrow());
+        lopHoc.setGiaoVien(giaoVienPort.timTheoId(req.getGiaoVien().getMaGiaoVien()).orElseThrow());
+        lopHoc.setHocKi(hocKiPort.timTheoId(req.getHocKi().getMaHocKi()).orElseThrow());
+        
+        lopHoc.setNhom(req.getNhom());
+        lopHoc.setPhongHoc(req.getPhongHoc());
+        lopHoc.setTietBatDau(req.getTietBatDau());
+        lopHoc.setThoiGian(req.getThoiGian());
+        
         return lopHocPort.luu(lopHoc);
     }
 
@@ -69,29 +82,41 @@ public class LopHocService implements ManageLopHocUseCase {
     @Override
     @Transactional
     public void importSinhVienExcel(Long maLopHoc, InputStream inputStream) {
-        LopHoc lopHoc = getLopHocById(maLopHoc);
-        Khoa khoaMonHoc = lopHoc.getMonHoc().getKhoa();
-
+        DataFormatter formatter = new DataFormatter();
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
-                Cell cell = row.getCell(0);
-                if (cell == null) continue;
-                String msvStr = cell.getCellType() == CellType.STRING ? cell.getStringCellValue() : String.valueOf((long) cell.getNumericCellValue());
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                String maLopStr = formatter.formatCellValue(row.getCell(0));
+                if (maLopStr.isEmpty()) continue;
+                
+                LopHoc lopHoc = lopHocPort.timTheoId(Long.parseLong(maLopStr))
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy Lớp học"));
+                
+                lopHoc.setNhom(formatter.formatCellValue(row.getCell(1)));
+                lopHoc.setPhongHoc(formatter.formatCellValue(row.getCell(5)));
+                
+                String tietStr = formatter.formatCellValue(row.getCell(6));
+                if (!tietStr.isEmpty()) lopHoc.setTietBatDau(Integer.parseInt(tietStr));
+                
+                lopHoc.setThoiGian(formatter.formatCellValue(row.getCell(7)));
+
+                String msvStr = formatter.formatCellValue(row.getCell(4));
                 if (msvStr.isEmpty()) continue;
+                SinhVien sv = sinhVienPort.timTheoId(Long.parseLong(msvStr)).orElseThrow();
 
-                Long msv = Long.parseLong(msvStr);
-                SinhVien sv = sinhVienPort.timTheoId(msv).orElseThrow(() -> new RuntimeException("Không tìm thấy SV: " + msv));
-
+                Khoa khoaMonHoc = lopHoc.getMonHoc().getKhoa();
                 if (!sv.getKhoa().getMaKhoa().equals(khoaMonHoc.getMaKhoa())) {
                     throw new RuntimeException("Sinh viên " + sv.getHoTen() + " không thuộc khoa " + khoaMonHoc.getTenKhoa());
                 }
 
-                boolean exists = lopHoc.getDsSinhVien().stream().anyMatch(s -> s.getMsv().equals(sv.getMsv()));
-                if (!exists) lopHoc.getDsSinhVien().add(sv);
+                if (lopHoc.getDsSinhVien().stream().noneMatch(s -> s.getMsv().equals(sv.getMsv()))) {
+                    lopHoc.getDsSinhVien().add(sv);
+                }
+                lopHocPort.luu(lopHoc);
             }
-            lopHocPort.luu(lopHoc);
         } catch (Exception e) {
             throw new RuntimeException("Lỗi import Excel: " + e.getMessage());
         }

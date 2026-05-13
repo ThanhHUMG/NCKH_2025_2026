@@ -11,11 +11,15 @@ export default function LopHocPage() {
   const [giaoViens, setGiaoViens] = useState([]);
   const [hocKys, setHocKys] = useState([]);
 
-  // Form thêm/sửa lớp
+  // Form thêm/sửa lớp ĐÃ CẬP NHẬT 4 trường mới
   const [form, setForm] = useState({
     maMonHoc: "",
     maGiaoVien: "",
     maHocKi: "",
+    nhom: "",
+    phongHoc: "",
+    thoiGian: "",
+    tietBatDau: "",
   });
   const [editingId, setEditingId] = useState(null);
 
@@ -49,15 +53,32 @@ export default function LopHocPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const params = {
-        maMonHoc: form.maMonHoc,
-        maGiaoVien: form.maGiaoVien,
-        maHocKi: form.maHocKi,
+      // ĐỔI TỪ PARAMS SANG REQUEST BODY (JSON)
+      const payload = {
+        monHoc: { maMonHoc: form.maMonHoc },
+        giaoVien: { maGiaoVien: form.maGiaoVien },
+        hocKi: { maHocKi: form.maHocKi },
+        nhom: form.nhom,
+        phongHoc: form.phongHoc,
+        thoiGian: form.thoiGian,
+        tietBatDau: form.tietBatDau ? parseInt(form.tietBatDau) : null,
       };
-      if (editingId)
-        await axiosClient.put(`/api/lop-hoc/${editingId}`, null, { params });
-      else await axiosClient.post("/api/lop-hoc", null, { params });
-      setForm({ maMonHoc: "", maGiaoVien: "", maHocKi: "" });
+
+      if (editingId) {
+        await axiosClient.put(`/api/lop-hoc/${editingId}`, payload);
+      } else {
+        await axiosClient.post("/api/lop-hoc", payload);
+      }
+
+      setForm({
+        maMonHoc: "",
+        maGiaoVien: "",
+        maHocKi: "",
+        nhom: "",
+        phongHoc: "",
+        thoiGian: "",
+        tietBatDau: "",
+      });
       setEditingId(null);
       loadAll();
     } catch (e) {
@@ -97,6 +118,7 @@ export default function LopHocPage() {
                   </option>
                 ))}
               </select>
+
               <select
                 className="form-select mb-3 rounded-3"
                 value={form.maGiaoVien}
@@ -112,8 +134,9 @@ export default function LopHocPage() {
                   </option>
                 ))}
               </select>
+
               <select
-                className="form-select mb-4 rounded-3"
+                className="form-select mb-3 rounded-3"
                 value={form.maHocKi}
                 onChange={(e) => setForm({ ...form, maHocKi: e.target.value })}
                 required
@@ -125,16 +148,85 @@ export default function LopHocPage() {
                   </option>
                 ))}
               </select>
-              <button
-                type="submit"
-                className="btn btn-primary w-100 rounded-3 fw-bold"
-              >
-                {editingId ? "Cập nhật Lớp" : "Tạo Lớp Học"}
-              </button>
+
+              {/* 4 TRƯỜNG DỮ LIỆU MỚI (Chia lưới 2 cột cho gọn) */}
+              <div className="row g-2 mb-4">
+                <div className="col-6">
+                  <input
+                    type="text"
+                    className="form-control rounded-3"
+                    placeholder="Nhóm (VD: 01)"
+                    value={form.nhom}
+                    onChange={(e) => setForm({ ...form, nhom: e.target.value })}
+                  />
+                </div>
+                <div className="col-6">
+                  <input
+                    type="text"
+                    className="form-control rounded-3"
+                    placeholder="Phòng (VD: A2-302)"
+                    value={form.phongHoc}
+                    onChange={(e) =>
+                      setForm({ ...form, phongHoc: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="col-6">
+                  <input
+                    type="text"
+                    className="form-control rounded-3"
+                    placeholder="T/gian (VD: Thứ 2)"
+                    value={form.thoiGian}
+                    onChange={(e) =>
+                      setForm({ ...form, thoiGian: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="col-6">
+                  <input
+                    type="number"
+                    className="form-control rounded-3"
+                    placeholder="Tiết (VD: 1)"
+                    value={form.tietBatDau}
+                    onChange={(e) =>
+                      setForm({ ...form, tietBatDau: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="d-flex gap-2">
+                {editingId && (
+                  <button
+                    type="button"
+                    className="btn btn-light w-50 rounded-3 fw-bold border"
+                    onClick={() => {
+                      setEditingId(null);
+                      setForm({
+                        maMonHoc: "",
+                        maGiaoVien: "",
+                        maHocKi: "",
+                        nhom: "",
+                        phongHoc: "",
+                        thoiGian: "",
+                        tietBatDau: "",
+                      });
+                    }}
+                  >
+                    Hủy
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className={`btn btn-primary rounded-3 fw-bold ${editingId ? "w-50" : "w-100"}`}
+                >
+                  {editingId ? "Cập nhật" : "Tạo Lớp Học"}
+                </button>
+              </div>
             </form>
           </div>
 
-          {/* Card: Import Excel Sinh viên vào Lớp */}
+          {/* Card: Import Excel Sinh viên vào Lớp (GIỮ NGUYÊN) */}
           <div
             className="card border-0 shadow-sm rounded-4 p-4"
             style={{ borderTop: "4px solid #198754" }}
@@ -178,8 +270,9 @@ export default function LopHocPage() {
               <thead className="table-light small text-uppercase">
                 <tr>
                   <th>Mã Lớp</th>
-                  <th className="text-start">Môn / Học Kỳ</th>
+                  <th className="text-start">Môn / Nhóm</th>
                   <th>Giảng Viên</th>
+                  <th>Phòng / Lịch</th>
                   <th>Sĩ số</th>
                   <th>Thao tác</th>
                 </tr>
@@ -191,10 +284,26 @@ export default function LopHocPage() {
                     <td className="text-start">
                       <div className="fw-bold">{lh.monHoc?.tenMonHoc}</div>
                       <div className="small text-muted">
-                        {lh.hocKi?.tenHocKy}
+                        Nhóm:{" "}
+                        <span className="text-dark fw-medium">
+                          {lh.nhom || "?"}
+                        </span>{" "}
+                        - {lh.hocKi?.tenHocKy}
                       </div>
                     </td>
                     <td className="fw-medium">{lh.giaoVien?.hoTen}</td>
+
+                    {/* CỘT MỚI: HIỂN THỊ PHÒNG VÀ LỊCH */}
+                    <td>
+                      <div className="fw-bold text-dark">
+                        {lh.phongHoc || "---"}
+                      </div>
+                      <div className="small text-muted">
+                        {lh.thoiGian || "---"}{" "}
+                        {lh.tietBatDau ? `(Tiết ${lh.tietBatDau})` : ""}
+                      </div>
+                    </td>
+
                     <td>
                       <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">
                         {lh.dsSinhVien?.length || 0} SV
@@ -209,6 +318,10 @@ export default function LopHocPage() {
                             maMonHoc: lh.monHoc?.maMonHoc,
                             maGiaoVien: lh.giaoVien?.maGiaoVien,
                             maHocKi: lh.hocKi?.maHocKi,
+                            nhom: lh.nhom || "",
+                            phongHoc: lh.phongHoc || "",
+                            thoiGian: lh.thoiGian || "",
+                            tietBatDau: lh.tietBatDau || "",
                           });
                         }}
                       >

@@ -29,57 +29,103 @@ public class DiemThiService implements ManageDiemThiUseCase {
     @Override
     @Transactional
     public void importDiemAExcel(Long maLopHoc, InputStream inputStream) {
-        // Giữ lại nếu cần dùng phương thức cũ
+        // Giữ lại để tương thích với hệ thống cũ
     }
 
-    // ĐÂY LÀ PHƯƠNG THỨC MỚI ĐƯỢC CẬP NHẬT
+    // --- PHƯƠNG THỨC CỦA ADMIN/PHÒNG THI: NHẬP ĐIỂM A (Cột 5) ---
     @Override
     @Transactional
     public void importDiemTuExcel(MultipartFile file) {
+        DataFormatter formatter = new DataFormatter(); // Nâng cấp: Chống lỗi format Excel
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
-            
-            // Lấy tất cả lớp học ra một lần để tăng tốc độ dò tìm
-            List<LopHoc> allLopHocs = lopHocPort.layTatCa();
+            List<LopHoc> allLopHocs = lopHocPort.layTatCa(); // Tăng tốc độ dò tìm
 
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue; // Bỏ qua tiêu đề
 
-                Cell cellMsv = row.getCell(1);   // Cột 1: MSV
-                Cell cellMaMon = row.getCell(3); // Cột 3: Mã môn
-                Cell cellDiem = row.getCell(5);  // Cột 5: Điểm Cuối Kỳ (A)
+                String msvStr = formatter.formatCellValue(row.getCell(1)); // Cột 1: MSV
+                String maMonStr = formatter.formatCellValue(row.getCell(3)); // Cột 3: Mã môn
+                String diemAStr = formatter.formatCellValue(row.getCell(5)); // Cột 5: Điểm A
 
-                if (cellMsv == null || cellMsv.getCellType() == CellType.BLANK) continue;
+                if (msvStr.isEmpty() || maMonStr.isEmpty() || diemAStr.isEmpty()) continue;
 
-                Long msv = (long) cellMsv.getNumericCellValue();
-                Long maMon = (long) cellMaMon.getNumericCellValue();
-                Double diemA = cellDiem.getNumericCellValue();
+                Long msv = Long.parseLong(msvStr);
+                Long maMon = Long.parseLong(maMonStr);
+                Double diemA = Double.parseDouble(diemAStr);
 
                 // 1. Lấy thông tin Sinh Viên
                 SinhVien sv = sinhVienPort.timTheoId(msv)
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy Sinh Viên có MSV: " + msv));
 
-                // 2. Tự động dò tìm Lớp học (Phải chứa Sinh Viên này và khớp Mã Môn)
+                // 2. Dò tìm Lớp học khớp MSV và Mã Môn
                 LopHoc lopHoc = allLopHocs.stream()
                         .filter(lh -> lh.getMonHoc().getMaMonHoc().equals(maMon))
                         .filter(lh -> lh.getDsSinhVien().stream().anyMatch(s -> s.getMsv().equals(msv)))
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Sinh viên " + sv.getHoTen() + " (" + msv + ") không có danh sách thi môn học mã " + maMon));
+                        .orElseThrow(() -> new RuntimeException("Sinh viên " + sv.getHoTen() + " không có danh sách thi môn " + maMon));
 
-                // 3. Cập nhật hoặc tạo mới điểm thi
+                // 3. Cập nhật hoặc tạo mới
                 DiemThi diemThi = diemThiPort.findBySinhVienAndLopHoc(msv, lopHoc.getMaLopHoc())
                         .orElse(DiemThi.builder().sinhVien(sv).lopHoc(lopHoc).build());
                         
                 diemThi.setDiemA(diemA);
-                diemThi.tinhDiem(); // Tính toán điểm TB và Điểm Chữ theo Domain Rule
-                
+                diemThi.tinhDiem(); 
                 diemThiPort.luu(diemThi);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Lỗi đọc file Excel: " + e.getMessage());
+            throw new RuntimeException("Lỗi đọc file điểm A: " + e.getMessage());
         }
     }
 
+    // --- PHƯƠNG THỨC MỚI CHO GIẢNG VIÊN: NHẬP ĐIỂM B & C (Cột 5, Cột 6) ---
+    @Override
+    @Transactional
+    public void importDiemThanhPhanExcel(MultipartFile file) {
+        DataFormatter formatter = new DataFormatter();
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            List<LopHoc> allLopHocs = lopHocPort.layTatCa();
+
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue; 
+
+                String msvStr = formatter.formatCellValue(row.getCell(1));  // Cột 1: MSV
+                String maMonStr = formatter.formatCellValue(row.getCell(3)); // Cột 3: Mã môn
+                
+                if (msvStr.isEmpty() || maMonStr.isEmpty()) continue;
+
+                Long msv = Long.parseLong(msvStr);
+                Long maMon = Long.parseLong(maMonStr);
+
+                SinhVien sv = sinhVienPort.timTheoId(msv)
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy Sinh Viên MSV: " + msv));
+
+                LopHoc lopHoc = allLopHocs.stream()
+                        .filter(lh -> lh.getMonHoc().getMaMonHoc().equals(maMon))
+                        .filter(lh -> lh.getDsSinhVien().stream().anyMatch(s -> s.getMsv().equals(msv)))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Sinh viên " + sv.getHoTen() + " chưa được xếp vào lớp môn " + maMon));
+
+                DiemThi diemThi = diemThiPort.findBySinhVienAndLopHoc(msv, lopHoc.getMaLopHoc())
+                        .orElse(DiemThi.builder().sinhVien(sv).lopHoc(lopHoc).build());
+
+                // Đọc điểm B (Cột 5) và Điểm C (Cột 6)
+                String diemBStr = formatter.formatCellValue(row.getCell(5));
+                String diemCStr = formatter.formatCellValue(row.getCell(6));
+
+                if (!diemBStr.isEmpty()) diemThi.setDiemB(Double.parseDouble(diemBStr));
+                if (!diemCStr.isEmpty()) diemThi.setDiemC(Double.parseDouble(diemCStr));
+
+                diemThi.tinhDiem(); 
+                diemThiPort.luu(diemThi);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi import điểm thành phần (B, C): " + e.getMessage());
+        }
+    }
+
+    // --- THỐNG KÊ LỚP HỌC (Giữ nguyên) ---
     @Override
     public ThongKeLopHocDTO thongKeTheoLop(Long maLopHoc) {
         LopHoc lopHoc = lopHocPort.timTheoId(maLopHoc).orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học"));

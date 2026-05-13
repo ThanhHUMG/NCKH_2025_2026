@@ -12,22 +12,27 @@ import java.util.List;
 @RequestMapping("/api/lop-hoc")
 @RequiredArgsConstructor
 public class LopHocController {
+
     private final ManageLopHocUseCase lopHocUseCase;
 
     @GetMapping
-    public ResponseEntity<List<LopHoc>> getAll() { return ResponseEntity.ok(lopHocUseCase.getAllLopHoc()); }
+    public ResponseEntity<List<LopHoc>> getAll() {
+        return ResponseEntity.ok(lopHocUseCase.getAllLopHoc());
+    }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LopHoc> getById(@PathVariable Long id) { return ResponseEntity.ok(lopHocUseCase.getLopHocById(id)); }
+    public ResponseEntity<LopHoc> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(lopHocUseCase.getLopHocById(id));
+    }
 
     @PostMapping
-    public ResponseEntity<LopHoc> create(@RequestParam Long maMonHoc, @RequestParam Long maGiaoVien, @RequestParam Long maHocKi) {
-        return ResponseEntity.ok(lopHocUseCase.createLopHoc(maMonHoc, maGiaoVien, maHocKi));
+    public ResponseEntity<LopHoc> create(@RequestBody LopHoc lopHocReq) {
+        return ResponseEntity.ok(lopHocUseCase.createLopHoc(lopHocReq));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<LopHoc> update(@PathVariable Long id, @RequestParam Long maMonHoc, @RequestParam Long maGiaoVien, @RequestParam Long maHocKi) {
-        return ResponseEntity.ok(lopHocUseCase.updateLopHoc(id, maMonHoc, maGiaoVien, maHocKi));
+    public ResponseEntity<LopHoc> update(@PathVariable Long id, @RequestBody LopHoc lopHocReq) {
+        return ResponseEntity.ok(lopHocUseCase.updateLopHoc(id, lopHocReq));
     }
 
     @DeleteMapping("/{id}")
@@ -36,16 +41,11 @@ public class LopHocController {
         return ResponseEntity.ok("Xóa lớp học thành công");
     }
 
-    @DeleteMapping("/{id}/remove-sinh-vien/{msv}")
-    public ResponseEntity<LopHoc> removeSinhVien(@PathVariable Long id, @PathVariable Long msv) {
-        return ResponseEntity.ok(lopHocUseCase.removeSinhVienFromLop(id, msv));
-    }
-
     @PostMapping("/{id}/import-sinh-vien")
     public ResponseEntity<String> importSinhVien(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         try {
             lopHocUseCase.importSinhVienExcel(id, file.getInputStream());
-            return ResponseEntity.ok("Import danh sách sinh viên vào lớp thành công");
+            return ResponseEntity.ok("Import thành công");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
         }

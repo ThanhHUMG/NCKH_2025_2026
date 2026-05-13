@@ -7,9 +7,9 @@ import java.util.List;
 public interface ManageLopHocUseCase {
     List<LopHoc> getAllLopHoc();
     LopHoc getLopHocById(Long id);
-    LopHoc createLopHoc(Long maMonHoc, Long maGiaoVien, Long maHocKi);
-    LopHoc updateLopHoc(Long maLopHoc, Long maMonHoc, Long maGiaoVien, Long maHocKi);
-    LopHoc removeSinhVienFromLop(Long maLopHoc, Long msv);
+    LopHoc createLopHoc(LopHoc lopHocReq);
+    LopHoc updateLopHoc(Long maLopHoc, LopHoc lopHocReq);
     void deleteLopHoc(Long id);
-    void importSinhVienExcel(Long maLopHoc, InputStream inputStream); 
+    LopHoc removeSinhVienFromLop(Long maLopHoc, Long msv);
+    void importSinhVienExcel(Long maLopHoc, InputStream inputStream);
 }

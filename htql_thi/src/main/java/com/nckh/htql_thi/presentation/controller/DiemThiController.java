@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/diem-thi")
 @RequiredArgsConstructor
 public class DiemThiController {
+
     private final ManageDiemThiUseCase diemThiUseCase;
 
     // API cũ để tương thích
@@ -24,11 +25,23 @@ public class DiemThiController {
         }
     }
 
+    // API cho Admin/Phòng khảo thí nhập Điểm A (Tự động tìm lớp)
     @PostMapping("/import")
     public ResponseEntity<String> importDiemTuDong(@RequestParam("file") MultipartFile file) {
         try {
             diemThiUseCase.importDiemTuExcel(file);
-            return ResponseEntity.ok("Hệ thống đã tự động lưu điểm cho các sinh viên thành công!");
+            return ResponseEntity.ok("Hệ thống đã tự động lưu Điểm Cuối Kỳ (A) thành công!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi import: " + e.getMessage());
+        }
+    }
+
+    // API MỚI CHO GIẢNG VIÊN: Nhập Điểm Thành Phần (B, C)
+    @PostMapping("/import-diem-thanh-phan")
+    public ResponseEntity<String> importDiemThanhPhan(@RequestParam("file") MultipartFile file) {
+        try {
+            diemThiUseCase.importDiemThanhPhanExcel(file);
+            return ResponseEntity.ok("Hệ thống đã cập nhật Điểm Thành Phần (B, C) thành công!");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi import: " + e.getMessage());
         }

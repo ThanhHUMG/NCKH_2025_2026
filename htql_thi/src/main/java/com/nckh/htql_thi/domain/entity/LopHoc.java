@@ -14,6 +14,10 @@ public class LopHoc {
     private MonHoc monHoc;
     private GiaoVien giaoVien;
     private HocKi hocKi;
+    private String nhom;
+    private String phongHoc;
+    private Integer tietBatDau;
+    private String thoiGian;
     @Builder.Default
     private List<SinhVien> dsSinhVien = new ArrayList<>();
 }

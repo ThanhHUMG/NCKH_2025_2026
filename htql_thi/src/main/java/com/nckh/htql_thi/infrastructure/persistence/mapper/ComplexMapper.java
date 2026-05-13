@@ -3,6 +3,7 @@ package com.nckh.htql_thi.infrastructure.persistence.mapper;
 import com.nckh.htql_thi.domain.entity.*;
 import com.nckh.htql_thi.infrastructure.persistence.entity.*;
 import org.springframework.stereotype.Component;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @Component
@@ -19,11 +20,19 @@ public class ComplexMapper {
         if (entity == null) return null;
         return LopHoc.builder()
                 .maLopHoc(entity.getMaLopHoc())
+                .nhom(entity.getNhom())
+                .phongHoc(entity.getPhongHoc())
+                .tietBatDau(entity.getTietBatDau())
+                .thoiGian(entity.getThoiGian())
                 .monHoc(coreMapper.toDomain(entity.getMonHoc()))
                 .giaoVien(coreMapper.toDomain(entity.getGiaoVien()))
-                // hocKi mapper gọi trực tiếp qua thuộc tính hoặc bạn có thể tạo thủ công bằng ID
-                .hocKi(HocKi.builder().maHocKi(entity.getHocKi().getMaHocKi()).tenHocKy(entity.getHocKi().getTenHocKy()).build())
-                .dsSinhVien(entity.getDsSinhVien().stream().map(coreMapper::toDomain).collect(Collectors.toList()))
+                .hocKi(entity.getHocKi() != null ? HocKi.builder()
+                        .maHocKi(entity.getHocKi().getMaHocKi())
+                        .tenHocKy(entity.getHocKi().getTenHocKy()) 
+                        .build() : null)
+                .dsSinhVien(entity.getDsSinhVien() != null 
+                        ? entity.getDsSinhVien().stream().map(coreMapper::toDomain).collect(Collectors.toList()) 
+                        : new ArrayList<>())
                 .build();
     }
 
@@ -31,10 +40,19 @@ public class ComplexMapper {
         if (domain == null) return null;
         return LopHocJpaEntity.builder()
                 .maLopHoc(domain.getMaLopHoc())
+                .nhom(domain.getNhom())
+                .phongHoc(domain.getPhongHoc())
+                .tietBatDau(domain.getTietBatDau())
+                .thoiGian(domain.getThoiGian())
                 .monHoc(coreMapper.toJpaEntity(domain.getMonHoc()))
                 .giaoVien(coreMapper.toJpaEntity(domain.getGiaoVien()))
-                .hocKi(HocKiJpaEntity.builder().maHocKi(domain.getHocKi().getMaHocKi()).build())
-                .dsSinhVien(domain.getDsSinhVien().stream().map(coreMapper::toJpaEntity).collect(Collectors.toList()))
+                // Dùng đúng HocKiJpaEntity (i ngắn)
+                .hocKi(domain.getHocKi() != null ? HocKiJpaEntity.builder()
+                        .maHocKi(domain.getHocKi().getMaHocKi())
+                        .build() : null)
+                .dsSinhVien(domain.getDsSinhVien() != null 
+                        ? domain.getDsSinhVien().stream().map(coreMapper::toJpaEntity).collect(Collectors.toList()) 
+                        : new ArrayList<>())
                 .build();
     }
 
@@ -50,8 +68,12 @@ public class ComplexMapper {
                 .tietBatDau(entity.getTietBatDau())
                 .hinhThucThi(entity.getHinhThucThi())
                 .giaoVienCoiThi(coreMapper.toDomain(entity.getGiaoVienCoiThi()))
-                .dsSinhVien(entity.getDsSinhVien().stream().map(coreMapper::toDomain).collect(Collectors.toList()))
-                .dsGiamThi(entity.getDsGiamThi().stream().map(coreMapper::toDomain).collect(Collectors.toList()))
+                .dsSinhVien(entity.getDsSinhVien() != null 
+                        ? entity.getDsSinhVien().stream().map(coreMapper::toDomain).collect(Collectors.toList()) 
+                        : new ArrayList<>())
+                .dsGiamThi(entity.getDsGiamThi() != null 
+                        ? entity.getDsGiamThi().stream().map(coreMapper::toDomain).collect(Collectors.toList()) 
+                        : new ArrayList<>())
                 .build();
     }
 
@@ -66,8 +88,12 @@ public class ComplexMapper {
                 .tietBatDau(domain.getTietBatDau())
                 .hinhThucThi(domain.getHinhThucThi())
                 .giaoVienCoiThi(coreMapper.toJpaEntity(domain.getGiaoVienCoiThi()))
-                .dsSinhVien(domain.getDsSinhVien().stream().map(coreMapper::toJpaEntity).collect(Collectors.toList()))
-                .dsGiamThi(domain.getDsGiamThi().stream().map(coreMapper::toJpaEntity).collect(Collectors.toList()))
+                .dsSinhVien(domain.getDsSinhVien() != null 
+                        ? domain.getDsSinhVien().stream().map(coreMapper::toJpaEntity).collect(Collectors.toList()) 
+                        : new ArrayList<>())
+                .dsGiamThi(domain.getDsGiamThi() != null 
+                        ? domain.getDsGiamThi().stream().map(coreMapper::toJpaEntity).collect(Collectors.toList()) 
+                        : new ArrayList<>())
                 .build();
     }
 
