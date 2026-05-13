@@ -17,22 +17,22 @@ public class SinhVienController {
 
     @GetMapping
     public ResponseEntity<List<SinhVien>> getAll() { 
-        return ResponseEntity.ok(sinhVienUseCase.getAllSinhVien()); 
+        return ResponseEntity.ok(sinhVienUseCase.getAllSinhVien());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SinhVien> getById(@PathVariable Long id) { 
-        return ResponseEntity.ok(sinhVienUseCase.getSinhVienById(id)); 
+        return ResponseEntity.ok(sinhVienUseCase.getSinhVienById(id));
     }
 
     @PostMapping
     public ResponseEntity<SinhVien> create(@RequestBody SinhVien sinhVien) { 
-        return ResponseEntity.ok(sinhVienUseCase.createSinhVien(sinhVien)); 
+        return ResponseEntity.ok(sinhVienUseCase.createSinhVien(sinhVien));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<SinhVien> update(@PathVariable Long id, @RequestBody SinhVien sinhVien) { 
-        return ResponseEntity.ok(sinhVienUseCase.updateSinhVien(id, sinhVien)); 
+        return ResponseEntity.ok(sinhVienUseCase.updateSinhVien(id, sinhVien));
     }
 
     @DeleteMapping("/{id}")

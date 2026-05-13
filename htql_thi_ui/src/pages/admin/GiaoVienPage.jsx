@@ -10,6 +10,7 @@ export default function GiaoVienPage() {
   const [khoas, setKhoas] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
+    maGiaoVien: "",
     hoTen: "",
     namSinh: "",
     trinhDo: "",
@@ -39,14 +40,18 @@ export default function GiaoVienPage() {
     e.preventDefault();
     const payload = {
       ...form,
+      maGiaoVien: Number(form.maGiaoVien),
       namSinh: Number(form.namSinh),
       khoa: { maKhoa: Number(form.maKhoa) },
     };
+
     try {
       if (editingId)
         await axiosClient.put(`/api/giao-vien/${editingId}`, payload);
       else await axiosClient.post("/api/giao-vien", payload);
+
       setForm({
+        maGiaoVien: "",
         hoTen: "",
         namSinh: "",
         trinhDo: "",
@@ -58,7 +63,7 @@ export default function GiaoVienPage() {
       setEditingId(null);
       loadData();
     } catch (error) {
-      alert("❌ Lỗi: Trùng SĐT, Email hoặc sai dữ liệu!");
+      alert(error.response?.data || "❌ Lỗi: Mã GV tồn tại hoặc sai dữ liệu!");
     }
   };
 
@@ -79,6 +84,17 @@ export default function GiaoVienPage() {
               {editingId ? "Sửa thông tin" : "Thêm Giáo Viên"}
             </h5>
             <form onSubmit={handleSubmit}>
+              <input
+                type="number"
+                className="form-control mb-2 rounded-3 bg-light"
+                placeholder="Mã Giáo Viên *"
+                value={form.maGiaoVien}
+                onChange={(e) =>
+                  setForm({ ...form, maGiaoVien: e.target.value })
+                }
+                disabled={!!editingId}
+                required
+              />
               <input
                 type="text"
                 className="form-control mb-2 rounded-3"
@@ -149,7 +165,6 @@ export default function GiaoVienPage() {
                 value={form.diaChi}
                 onChange={(e) => setForm({ ...form, diaChi: e.target.value })}
               />
-
               <button
                 type="submit"
                 className="btn btn-primary w-100 rounded-3 fw-bold py-2"
@@ -198,6 +213,7 @@ export default function GiaoVienPage() {
                         onClick={() => {
                           setEditingId(gv.maGiaoVien);
                           setForm({
+                            maGiaoVien: gv.maGiaoVien,
                             hoTen: gv.hoTen,
                             namSinh: gv.namSinh,
                             trinhDo: gv.trinhDo,

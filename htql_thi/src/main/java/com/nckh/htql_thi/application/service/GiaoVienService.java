@@ -35,9 +35,24 @@ public class GiaoVienService implements ManageGiaoVienUseCase {
 
     @Override
     public GiaoVien createGiaoVien(GiaoVien giaoVien) {
+        // 1. Kiểm tra Mã GV không được để trống
+        if (giaoVien.getMaGiaoVien() == null) {
+            throw new RuntimeException("Mã giáo viên không được để trống!");
+        }
+
+        // 2. Kiểm tra trùng Mã GV trong hệ thống nhà trường
+        if (giaoVienPort.timTheoId(giaoVien.getMaGiaoVien()).isPresent()) {
+            throw new RuntimeException("Mã giáo viên " + giaoVien.getMaGiaoVien() + " đã tồn tại!");
+        }
+
         if (giaoVien.getHoTen() == null || giaoVien.getHoTen().trim().isEmpty()) throw new RuntimeException("Họ tên không được để trống");
-        if (giaoVien.getKhoa() == null) throw new RuntimeException("Giáo viên phải thuộc khoa");
-        giaoVien.setMaGiaoVien(null);
+        if (giaoVien.getKhoa() == null || giaoVien.getKhoa().getMaKhoa() == null) throw new RuntimeException("Giáo viên phải thuộc khoa");
+        
+        // Lấy lại đúng entity Khoa từ DB để đảm bảo tính toàn vẹn
+        Khoa khoa = khoaPort.timTheoId(giaoVien.getKhoa().getMaKhoa())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khoa"));
+        giaoVien.setKhoa(khoa);
+        
         giaoVien.setHoTen(giaoVien.getHoTen().trim());
         return giaoVienPort.luu(giaoVien);
     }
@@ -47,13 +62,20 @@ public class GiaoVienService implements ManageGiaoVienUseCase {
         GiaoVien gv = getGiaoVienById(id);
         if (details.getHoTen() == null || details.getHoTen().trim().isEmpty()) throw new RuntimeException("Họ tên không được để trống");
 
+        // Cập nhật Khoa
+        if (details.getKhoa() != null && details.getKhoa().getMaKhoa() != null) {
+            Khoa khoa = khoaPort.timTheoId(details.getKhoa().getMaKhoa())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khoa"));
+            gv.setKhoa(khoa);
+        }
+
         gv.setHoTen(details.getHoTen().trim());
         gv.setNamSinh(details.getNamSinh());
         gv.setTrinhDo(details.getTrinhDo());
         gv.setSoDienThoai(details.getSoDienThoai());
         gv.setEmail(details.getEmail());
         gv.setDiaChi(details.getDiaChi());
-        gv.setKhoa(details.getKhoa());
+        
         return giaoVienPort.luu(gv);
     }
 
@@ -68,23 +90,34 @@ public class GiaoVienService implements ManageGiaoVienUseCase {
             List<GiaoVien> list = new ArrayList<>();
 
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
-                String hoTen = getCellString(row.getCell(0));
-                Integer namSinh = getCellInteger(row.getCell(1));
-                String trinhDo = getCellString(row.getCell(2));
-                String soDienThoai = getCellString(row.getCell(3));
-                String email = getCellString(row.getCell(4));
-                String diaChi = getCellString(row.getCell(5));
-                String tenKhoa = getCellString(row.getCell(6));
+                if (row.getRowNum() == 0) continue; // Bỏ qua dòng tiêu đề
 
-                if (hoTen == null || hoTen.isEmpty()) continue;
+                // Dịch chuyển cột: Cột 0 bây giờ là Mã Giáo Viên
+                String maGvStr = getCellString(row.getCell(0)); 
+                String hoTen = getCellString(row.getCell(1));
+                Integer namSinh = getCellInteger(row.getCell(2));
+                String trinhDo = getCellString(row.getCell(3));
+                String soDienThoai = getCellString(row.getCell(4));
+                String email = getCellString(row.getCell(5));
+                String diaChi = getCellString(row.getCell(6));
+                String tenKhoa = getCellString(row.getCell(7)); // Dịch lên cột 7
+
+                if (maGvStr == null || maGvStr.isEmpty() || hoTen == null || hoTen.isEmpty()) continue;
+                
+                Long maGv = Long.parseLong(maGvStr);
+
                 if (tenKhoa == null || tenKhoa.isEmpty()) throw new RuntimeException("Dòng " + (row.getRowNum() + 1) + ": Thiếu tên khoa");
 
                 Khoa khoa = khoaPort.timTheoTen(tenKhoa.trim()).orElseThrow(() -> new RuntimeException("Không tìm thấy khoa: " + tenKhoa));
+                
+                // Bỏ qua nếu mã GV đã tồn tại
+                if (giaoVienPort.timTheoId(maGv).isPresent()) continue; 
+                
                 if (email != null && !email.isEmpty() && giaoVienPort.existsByEmail(email.trim())) continue;
                 if (soDienThoai != null && !soDienThoai.isEmpty() && giaoVienPort.existsBySoDienThoai(soDienThoai.trim())) continue;
 
                 list.add(GiaoVien.builder()
+                        .maGiaoVien(maGv) // Đã nhét Mã GV vào đây
                         .hoTen(hoTen.trim()).namSinh(namSinh).trinhDo(trinhDo)
                         .soDienThoai(soDienThoai).email(email).diaChi(diaChi).khoa(khoa)
                         .build());

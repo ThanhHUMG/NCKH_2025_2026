@@ -17,22 +17,22 @@ public class MonHocController {
 
     @GetMapping
     public ResponseEntity<List<MonHoc>> getAll() { 
-        return ResponseEntity.ok(monHocUseCase.getAllMonHoc()); 
+        return ResponseEntity.ok(monHocUseCase.getAllMonHoc());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<MonHoc> getById(@PathVariable Long id) { 
-        return ResponseEntity.ok(monHocUseCase.getMonHocById(id)); 
+        return ResponseEntity.ok(monHocUseCase.getMonHocById(id));
     }
 
     @PostMapping
     public ResponseEntity<MonHoc> create(@RequestBody MonHoc monHoc) { 
-        return ResponseEntity.ok(monHocUseCase.createMonHoc(monHoc)); 
+        return ResponseEntity.ok(monHocUseCase.createMonHoc(monHoc));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<MonHoc> update(@PathVariable Long id, @RequestBody MonHoc monHoc) { 
-        return ResponseEntity.ok(monHocUseCase.updateMonHoc(id, monHoc)); 
+        return ResponseEntity.ok(monHocUseCase.updateMonHoc(id, monHoc));
     }
 
     @DeleteMapping("/{id}")

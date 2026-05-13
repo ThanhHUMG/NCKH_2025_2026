@@ -19,7 +19,7 @@ public class SinhVienService implements ManageSinhVienUseCase {
 
     private final SinhVienPort sinhVienPort;
     private final KhoaPort khoaPort;
-
+    
     public SinhVienService(SinhVienPort sinhVienPort, KhoaPort khoaPort) {
         this.sinhVienPort = sinhVienPort;
         this.khoaPort = khoaPort;
@@ -35,8 +35,16 @@ public class SinhVienService implements ManageSinhVienUseCase {
 
     @Override
     public SinhVien createSinhVien(SinhVien sinhVien) {
+        if (sinhVien.getMsv() == null) throw new RuntimeException("Mã sinh viên không được để trống");
+        if (sinhVienPort.timTheoId(sinhVien.getMsv()).isPresent()) throw new RuntimeException("Mã sinh viên " + sinhVien.getMsv() + " đã tồn tại");
+        
         if (sinhVien.getHoTen() == null || sinhVien.getHoTen().trim().isEmpty()) throw new RuntimeException("Họ tên sinh viên không được để trống");
-        sinhVien.setMsv(null);
+        if (sinhVien.getKhoa() == null || sinhVien.getKhoa().getMaKhoa() == null) throw new RuntimeException("Sinh viên phải thuộc khoa");
+
+        Khoa khoa = khoaPort.timTheoId(sinhVien.getKhoa().getMaKhoa())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khoa"));
+        sinhVien.setKhoa(khoa);
+
         sinhVien.setHoTen(sinhVien.getHoTen().trim());
         return sinhVienPort.luu(sinhVien);
     }
@@ -46,13 +54,18 @@ public class SinhVienService implements ManageSinhVienUseCase {
         SinhVien sv = getSinhVienById(id);
         if (details.getHoTen() == null || details.getHoTen().trim().isEmpty()) throw new RuntimeException("Họ tên không được để trống");
 
+        if (details.getKhoa() != null && details.getKhoa().getMaKhoa() != null) {
+            Khoa khoa = khoaPort.timTheoId(details.getKhoa().getMaKhoa())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khoa"));
+            sv.setKhoa(khoa);
+        }
+
         sv.setHoTen(details.getHoTen().trim());
         sv.setNamSinh(details.getNamSinh());
         sv.setNienKhoa(details.getNienKhoa());
         sv.setSoDienThoai(details.getSoDienThoai());
         sv.setEmail(details.getEmail());
         sv.setDiaChi(details.getDiaChi());
-        sv.setKhoa(details.getKhoa());
         return sinhVienPort.luu(sv);
     }
 
@@ -68,22 +81,28 @@ public class SinhVienService implements ManageSinhVienUseCase {
 
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
-                String hoTen = getCellString(row.getCell(0));
-                Integer namSinh = getCellInteger(row.getCell(1));
-                String nienKhoa = getCellString(row.getCell(2));
-                String soDienThoai = getCellString(row.getCell(3));
-                String email = getCellString(row.getCell(4));
-                String diaChi = getCellString(row.getCell(5));
-                String tenKhoa = getCellString(row.getCell(6));
+                String msvStr = getCellString(row.getCell(0));
+                String hoTen = getCellString(row.getCell(1));
+                Integer namSinh = getCellInteger(row.getCell(2));
+                String nienKhoa = getCellString(row.getCell(3));
+                String soDienThoai = getCellString(row.getCell(4));
+                String email = getCellString(row.getCell(5));
+                String diaChi = getCellString(row.getCell(6));
+                String tenKhoa = getCellString(row.getCell(7));
 
-                if (hoTen == null || hoTen.isEmpty()) continue;
+                if (msvStr == null || msvStr.isEmpty() || hoTen == null || hoTen.isEmpty()) continue;
+                
+                Long msv = Long.parseLong(msvStr);
+                if (sinhVienPort.timTheoId(msv).isPresent()) continue; // Bỏ qua nếu MSV đã tồn tại
+
                 if (tenKhoa == null || tenKhoa.isEmpty()) throw new RuntimeException("Dòng " + (row.getRowNum() + 1) + ": Thiếu tên khoa");
-
                 Khoa khoa = khoaPort.timTheoTen(tenKhoa.trim()).orElseThrow(() -> new RuntimeException("Không tìm thấy khoa: " + tenKhoa));
+                
                 if (email != null && !email.isEmpty() && sinhVienPort.existsByEmail(email.trim())) continue;
                 if (soDienThoai != null && !soDienThoai.isEmpty() && sinhVienPort.existsBySoDienThoai(soDienThoai.trim())) continue;
-
+                
                 list.add(SinhVien.builder()
+                        .msv(msv)
                         .hoTen(hoTen.trim()).namSinh(namSinh).nienKhoa(nienKhoa)
                         .soDienThoai(soDienThoai).email(email).diaChi(diaChi).khoa(khoa)
                         .build());

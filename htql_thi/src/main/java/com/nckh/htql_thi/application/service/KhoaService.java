@@ -16,7 +16,6 @@ import java.util.List;
 public class KhoaService implements ManageKhoaUseCase {
 
     private final KhoaPort khoaPort;
-
     public KhoaService(KhoaPort khoaPort) { this.khoaPort = khoaPort; }
 
     @Override
@@ -29,11 +28,13 @@ public class KhoaService implements ManageKhoaUseCase {
 
     @Override
     public Khoa createKhoa(Khoa khoa) {
+        if (khoa.getMaKhoa() == null) throw new RuntimeException("Mã khoa không được để trống");
+        if (khoaPort.timTheoId(khoa.getMaKhoa()).isPresent()) throw new RuntimeException("Mã khoa " + khoa.getMaKhoa() + " đã tồn tại trong hệ thống");
+
         if (khoa.getTenKhoa() == null || khoa.getTenKhoa().trim().isEmpty()) throw new RuntimeException("Tên khoa không được để trống");
         String tenKhoa = khoa.getTenKhoa().trim();
         if (khoaPort.existsByTenKhoa(tenKhoa)) throw new RuntimeException("Khoa đã tồn tại: " + tenKhoa);
 
-        khoa.setMaKhoa(null);
         khoa.setTenKhoa(tenKhoa);
         return khoaPort.luu(khoa);
     }
@@ -58,12 +59,15 @@ public class KhoaService implements ManageKhoaUseCase {
 
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
-                String tenKhoa = getCellString(row.getCell(0));
-                if (tenKhoa == null || tenKhoa.isEmpty()) continue;
+                String maKhoaStr = getCellString(row.getCell(0));
+                String tenKhoa = getCellString(row.getCell(1));
 
-                if (!khoaPort.existsByTenKhoa(tenKhoa)) {
-                    list.add(Khoa.builder().tenKhoa(tenKhoa).build());
-                }
+                if (maKhoaStr == null || maKhoaStr.isEmpty() || tenKhoa == null || tenKhoa.isEmpty()) continue;
+                
+                Long maKhoa = Long.parseLong(maKhoaStr);
+                if (khoaPort.timTheoId(maKhoa).isPresent() || khoaPort.existsByTenKhoa(tenKhoa.trim())) continue;
+
+                list.add(Khoa.builder().maKhoa(maKhoa).tenKhoa(tenKhoa.trim()).build());
             }
             khoaPort.luuDanhSach(list);
         } catch (Exception e) {

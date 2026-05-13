@@ -8,7 +8,12 @@ import { BookOpen, Edit, Trash2 } from "lucide-react";
 export default function MonHocPage() {
   const [list, setList] = useState([]);
   const [khoas, setKhoas] = useState([]);
-  const [form, setForm] = useState({ tenMonHoc: "", tinChi: "", maKhoa: "" });
+  const [form, setForm] = useState({
+    maMonHoc: "",
+    tenMonHoc: "",
+    tinChi: "",
+    maKhoa: "",
+  });
   const [editingId, setEditingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -29,15 +34,23 @@ export default function MonHocPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {
+      maMonHoc: Number(form.maMonHoc),
       tenMonHoc: form.tenMonHoc,
       tinChi: Number(form.tinChi),
       khoa: { maKhoa: Number(form.maKhoa) },
     };
-    if (editingId) await axiosClient.put(`/api/mon-hoc/${editingId}`, payload);
-    else await axiosClient.post("/api/mon-hoc", payload);
-    setForm({ tenMonHoc: "", tinChi: "", maKhoa: "" });
-    setEditingId(null);
-    loadData();
+
+    try {
+      if (editingId)
+        await axiosClient.put(`/api/mon-hoc/${editingId}`, payload);
+      else await axiosClient.post("/api/mon-hoc", payload);
+
+      setForm({ maMonHoc: "", tenMonHoc: "", tinChi: "", maKhoa: "" });
+      setEditingId(null);
+      loadData();
+    } catch (e) {
+      alert(e.response?.data || "Lỗi dữ liệu (Mã môn có thể đã tồn tại)!");
+    }
   };
 
   const currentData = list.slice(
@@ -58,9 +71,18 @@ export default function MonHocPage() {
             </h5>
             <form onSubmit={handleSubmit}>
               <input
+                type="number"
+                className="form-control rounded-3 mb-2 bg-light"
+                placeholder="Mã môn học *"
+                value={form.maMonHoc}
+                onChange={(e) => setForm({ ...form, maMonHoc: e.target.value })}
+                disabled={!!editingId} // Khóa khi sửa
+                required
+              />
+              <input
                 type="text"
                 className="form-control rounded-3 mb-2"
-                placeholder="Tên môn"
+                placeholder="Tên môn học *"
                 value={form.tenMonHoc}
                 onChange={(e) =>
                   setForm({ ...form, tenMonHoc: e.target.value })
@@ -70,7 +92,7 @@ export default function MonHocPage() {
               <input
                 type="number"
                 className="form-control rounded-3 mb-2"
-                placeholder="Số tín chỉ"
+                placeholder="Số tín chỉ *"
                 value={form.tinChi}
                 onChange={(e) => setForm({ ...form, tinChi: e.target.value })}
                 required
@@ -81,7 +103,7 @@ export default function MonHocPage() {
                 onChange={(e) => setForm({ ...form, maKhoa: e.target.value })}
                 required
               >
-                <option value="">-- Chọn khoa --</option>
+                <option value="">-- Chọn khoa trực thuộc --</option>
                 {khoas.map((k) => (
                   <option key={k.maKhoa} value={k.maKhoa}>
                     {k.tenKhoa}
@@ -101,11 +123,13 @@ export default function MonHocPage() {
             onSuccess={loadData}
           />
         </div>
+
         <div className="col-lg-8">
           <div className="card border-0 shadow-sm rounded-4 p-4">
             <table className="table table-hover align-middle mb-0">
               <thead className="table-light small text-uppercase">
                 <tr>
+                  <th>Mã Môn</th>
                   <th>Tên Môn</th>
                   <th>Khoa</th>
                   <th>Tín chỉ</th>
@@ -115,6 +139,7 @@ export default function MonHocPage() {
               <tbody>
                 {currentData.map((m) => (
                   <tr key={m.maMonHoc}>
+                    <td className="text-muted fw-bold">#{m.maMonHoc}</td>
                     <td className="fw-bold">{m.tenMonHoc}</td>
                     <td>{m.khoa?.tenKhoa}</td>
                     <td>
@@ -128,6 +153,7 @@ export default function MonHocPage() {
                         onClick={() => {
                           setEditingId(m.maMonHoc);
                           setForm({
+                            maMonHoc: m.maMonHoc,
                             tenMonHoc: m.tenMonHoc,
                             tinChi: m.tinChi,
                             maKhoa: m.khoa?.maKhoa,
@@ -139,7 +165,7 @@ export default function MonHocPage() {
                       <button
                         className="btn btn-sm btn-light text-danger"
                         onClick={async () => {
-                          if (window.confirm("Xóa?")) {
+                          if (window.confirm("Xóa môn học này?")) {
                             await axiosClient.delete(
                               `/api/mon-hoc/${m.maMonHoc}`,
                             );

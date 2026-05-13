@@ -17,22 +17,22 @@ public class GiaoVienController {
 
     @GetMapping
     public ResponseEntity<List<GiaoVien>> getAll() { 
-        return ResponseEntity.ok(giaoVienUseCase.getAllGiaoVien()); 
+        return ResponseEntity.ok(giaoVienUseCase.getAllGiaoVien());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<GiaoVien> getById(@PathVariable Long id) { 
-        return ResponseEntity.ok(giaoVienUseCase.getGiaoVienById(id)); 
+        return ResponseEntity.ok(giaoVienUseCase.getGiaoVienById(id));
     }
 
     @PostMapping
     public ResponseEntity<GiaoVien> create(@RequestBody GiaoVien giaoVien) { 
-        return ResponseEntity.ok(giaoVienUseCase.createGiaoVien(giaoVien)); 
+        return ResponseEntity.ok(giaoVienUseCase.createGiaoVien(giaoVien));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<GiaoVien> update(@PathVariable Long id, @RequestBody GiaoVien giaoVien) { 
-        return ResponseEntity.ok(giaoVienUseCase.updateGiaoVien(id, giaoVien)); 
+        return ResponseEntity.ok(giaoVienUseCase.updateGiaoVien(id, giaoVien));
     }
 
     @DeleteMapping("/{id}")

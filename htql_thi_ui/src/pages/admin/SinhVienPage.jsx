@@ -10,6 +10,7 @@ export default function SinhVienPage() {
   const [khoas, setKhoas] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
+    msv: "",
     hoTen: "",
     namSinh: "",
     nienKhoa: "",
@@ -39,14 +40,18 @@ export default function SinhVienPage() {
     e.preventDefault();
     const payload = {
       ...form,
+      msv: Number(form.msv),
       namSinh: Number(form.namSinh),
       khoa: { maKhoa: Number(form.maKhoa) },
     };
+
     try {
       if (editingId)
         await axiosClient.put(`/api/sinh-vien/${editingId}`, payload);
       else await axiosClient.post("/api/sinh-vien", payload);
+
       setForm({
+        msv: "",
         hoTen: "",
         namSinh: "",
         nienKhoa: "",
@@ -58,7 +63,7 @@ export default function SinhVienPage() {
       setEditingId(null);
       loadData();
     } catch (error) {
-      alert("❌ Lỗi dữ liệu!");
+      alert(error.response?.data || "❌ Lỗi: MSV đã tồn tại hoặc sai dữ liệu!");
     }
   };
 
@@ -79,6 +84,15 @@ export default function SinhVienPage() {
               {editingId ? "Sửa thông tin" : "Thêm Sinh Viên"}
             </h5>
             <form onSubmit={handleSubmit}>
+              <input
+                type="number"
+                className="form-control mb-2 rounded-3 bg-light"
+                placeholder="Mã Sinh Viên *"
+                value={form.msv}
+                onChange={(e) => setForm({ ...form, msv: e.target.value })}
+                disabled={!!editingId}
+                required
+              />
               <input
                 type="text"
                 className="form-control mb-2 rounded-3"
@@ -149,7 +163,6 @@ export default function SinhVienPage() {
                 value={form.diaChi}
                 onChange={(e) => setForm({ ...form, diaChi: e.target.value })}
               />
-
               <button
                 type="submit"
                 className="btn btn-info text-white w-100 rounded-3 fw-bold py-2"
@@ -199,6 +212,7 @@ export default function SinhVienPage() {
                         onClick={() => {
                           setEditingId(sv.msv);
                           setForm({
+                            msv: sv.msv,
                             hoTen: sv.hoTen,
                             namSinh: sv.namSinh,
                             nienKhoa: sv.nienKhoa,

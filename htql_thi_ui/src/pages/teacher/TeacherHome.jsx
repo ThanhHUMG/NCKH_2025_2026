@@ -7,48 +7,57 @@ export default function TeacherHome() {
   const [me, setMe] = useState(null);
   const [lopHocs, setLopHocs] = useState([]);
   const [lichThis, setLichThis] = useState([]);
-  const [hocKis, setHocKis] = useState([]); // Danh sách học kỳ trích xuất được
-  const [selectedHocKi, setSelectedHocKi] = useState(""); // Học kỳ đang chọn
+  const [hocKis, setHocKis] = useState([]);
+  const [selectedHocKi, setSelectedHocKi] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Sử dụng Promise.allSettled để bảo vệ trang web khỏi lỗi 403 hoặc 404
-        const [resMe, resLop, resLich] = await Promise.allSettled([
+        const [resMe, resLop, resLich, resHk] = await Promise.allSettled([
           axiosClient.get("/api/teacher/me"),
           axiosClient.get("/api/teacher/lop-hoc"),
           axiosClient.get("/api/teacher/lich-thi"),
+          axiosClient.get("/api/hoc-ky"),
         ]);
 
         if (resMe.status === "fulfilled") setMe(resMe.value.data);
-        if (resLich.status === "fulfilled")
-          setLichThis(resLich.value.data || []);
 
-        let loadedLop = [];
-        if (resLop.status === "fulfilled") {
-          loadedLop = resLop.value.data || [];
-          setLopHocs(loadedLop);
+        const loadedLop =
+          resLop.status === "fulfilled" ? resLop.value.data || [] : [];
+        const loadedLich =
+          resLich.status === "fulfilled" ? resLich.value.data || [] : [];
+
+        setLopHocs(loadedLop);
+        setLichThis(loadedLich);
+
+        let finalHocKis = [];
+
+        // PHƯƠNG ÁN A
+        if (resHk.status === "fulfilled" && resHk.value.data?.length > 0) {
+          finalHocKis = resHk.value.data;
         }
-
-        // --- TRÍCH XUẤT HỌC KỲ TỪ DANH SÁCH LỚP ĐANG DẠY ---
-        if (loadedLop.length > 0) {
+        // PHƯƠNG ÁN B (Dự phòng)
+        else {
           const hkMap = new Map();
           loadedLop.forEach((l) => {
-            if (l.hocKi) {
-              hkMap.set(l.hocKi.maHocKi.toString(), l.hocKi);
-            }
+            if (l.hocKi) hkMap.set(l.hocKi.maHocKi.toString(), l.hocKi);
           });
+          loadedLich.forEach((lt) => {
+            if (lt.hocKi) hkMap.set(lt.hocKi.maHocKi.toString(), lt.hocKi);
+            if (lt.lopHoc?.hocKi)
+              hkMap.set(lt.lopHoc.hocKi.maHocKi.toString(), lt.lopHoc.hocKi);
+          });
+          finalHocKis = Array.from(hkMap.values());
+        }
 
-          const extractedHocKis = Array.from(hkMap.values());
-          // Sắp xếp học kỳ mới nhất lên đầu (hoặc cuối tùy bạn)
-          extractedHocKis.sort((a, b) => b.maHocKi - a.maHocKi);
-          setHocKis(extractedHocKis);
+        finalHocKis.sort((a, b) => Number(a.maHocKi) - Number(b.maHocKi));
+        setHocKis(finalHocKis);
 
-          // Mặc định chọn học kỳ đầu tiên trong danh sách đã sắp xếp
-          if (extractedHocKis.length > 0) {
-            setSelectedHocKi(extractedHocKis[0].maHocKi.toString());
-          }
+        if (finalHocKis.length > 0) {
+          setSelectedHocKi(
+            finalHocKis[finalHocKis.length - 1].maHocKi.toString(),
+          );
         }
       } catch (error) {
         console.error("Lỗi hệ thống:", error);
@@ -59,17 +68,29 @@ export default function TeacherHome() {
     fetchData();
   }, []);
 
-  // --- LOGIC LỌC DỮ LIỆU TẠI FRONTEND ---
+  // --- LOGIC LỌC DỮ LIỆU ---
   const filteredLopHocs = selectedHocKi
-    ? lopHocs.filter((l) => l.hocKi?.maHocKi?.toString() === selectedHocKi)
+    ? lopHocs.filter((l) => {
+        const hkId = l.hocKi?.maHocKi || l.hocKi;
+        return hkId?.toString() === selectedHocKi.toString();
+      })
     : lopHocs;
 
-  // Lọc lịch coi thi dựa trên các môn học thuộc học kỳ đang chọn
   const currentMonHocIds = filteredLopHocs.map((l) => l.monHoc?.maMonHoc);
+
   const filteredExams = selectedHocKi
-    ? lichThis.filter((lt) => currentMonHocIds.includes(lt.monHoc?.maMonHoc))
+    ? lichThis.filter((lt) => {
+        const hkId =
+          lt.hocKi?.maHocKi ||
+          lt.lopHoc?.hocKi?.maHocKi ||
+          lt.hocKi ||
+          lt.lopHoc?.hocKi;
+        if (hkId) return hkId?.toString() === selectedHocKi.toString();
+        // Cứu cánh nếu thiếu dữ liệu
+        return currentMonHocIds.includes(lt.monHoc?.maMonHoc);
+      })
     : lichThis;
-  // --------------------------------------
+  // -------------------------
 
   if (loading)
     return (
@@ -88,7 +109,6 @@ export default function TeacherHome() {
           👨‍🏫 Bảng Điều Khiển Giảng Viên
         </h3>
 
-        {/* BỘ LỌC HỌC KỲ THÔNG MINH */}
         <div className="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill shadow-sm border">
           <Filter size={18} className="text-primary" />
           <span className="fw-medium text-muted small">Học kỳ:</span>
@@ -98,7 +118,9 @@ export default function TeacherHome() {
             value={selectedHocKi}
             onChange={(e) => setSelectedHocKi(e.target.value)}
           >
-            <option value="">-- Tất cả học kỳ --</option>
+            {hocKis.length === 0 && (
+              <option value="">-- Chưa có dữ liệu --</option>
+            )}
             {hocKis.map((hk) => (
               <option key={hk.maHocKi} value={hk.maHocKi}>
                 {hk.tenHocKy}
@@ -108,7 +130,7 @@ export default function TeacherHome() {
         </div>
       </div>
 
-      {me ? (
+      {me && (
         <div className="card shadow-sm border-0 rounded-4 mb-4 bg-white border-start border-info border-4">
           <div className="card-body p-4">
             <h5 className="fw-bold text-info mb-4 d-flex align-items-center gap-2">
@@ -146,14 +168,9 @@ export default function TeacherHome() {
             </div>
           </div>
         </div>
-      ) : (
-        <div className="alert alert-warning rounded-4 shadow-sm">
-          ⚠️ Không thể tải thông tin hồ sơ giảng viên.
-        </div>
       )}
 
       <div className="row g-4">
-        {/* DANH SÁCH LỚP HỌC (ĐÃ LỌC) */}
         <div className="col-lg-6">
           <div className="card border-0 shadow-sm rounded-4 h-100 bg-white">
             <div className="card-body p-4">
@@ -192,7 +209,7 @@ export default function TeacherHome() {
                   ))
                 ) : (
                   <div className="text-center py-5 text-muted small bg-light rounded-3">
-                    Không có lớp học nào trong học kỳ này.
+                    Không có lớp học nào trong kỳ này.
                   </div>
                 )}
               </div>
@@ -200,7 +217,6 @@ export default function TeacherHome() {
           </div>
         </div>
 
-        {/* LỊCH COI THI (ĐÃ LỌC) */}
         <div className="col-lg-6">
           <div className="card border-0 shadow-sm rounded-4 h-100 bg-white">
             <div className="card-body p-4">
@@ -228,7 +244,7 @@ export default function TeacherHome() {
                           <strong className="text-dark">{lt.thoiGian}</strong> -
                           Tiết {lt.tietBatDau}
                         </span>
-                        <span className="text-muted italic">
+                        <span className="text-muted fst-italic">
                           {lt.hinhThucThi}
                         </span>
                       </div>
@@ -236,7 +252,7 @@ export default function TeacherHome() {
                   ))
                 ) : (
                   <div className="text-center py-5 text-muted small bg-light rounded-3">
-                    Không có lịch coi thi trong học kỳ này.
+                    Chưa có lịch gác thi ở kỳ này.
                   </div>
                 )}
               </div>

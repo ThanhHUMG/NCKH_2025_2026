@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import DashboardLayout from "../../layout/DashboardLayout";
 import axiosClient from "../../api/axiosClient";
-import ImportExcelBox from "../../components/ImportExcelBox"; // [cite: 713]
+import ImportExcelBox from "../../components/ImportExcelBox";
 import Pagination from "../../components/Pagination";
 import { Edit, Trash2, PlusCircle, Layers } from "lucide-react";
 
 export default function KhoaPage() {
   const [list, setList] = useState([]);
-  const [tenKhoa, setTenKhoa] = useState("");
+
+  // Đổi thành Object form để chứa cả mã Khoa
+  const [form, setForm] = useState({ maKhoa: "", tenKhoa: "" });
   const [editingId, setEditingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -23,15 +25,22 @@ export default function KhoaPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const payload = {
+      maKhoa: Number(form.maKhoa),
+      tenKhoa: form.tenKhoa,
+    };
+
     try {
-      if (editingId)
-        await axiosClient.put(`/api/khoa/${editingId}`, { tenKhoa });
-      else await axiosClient.post("/api/khoa", { tenKhoa });
-      setTenKhoa("");
+      if (editingId) {
+        await axiosClient.put(`/api/khoa/${editingId}`, payload);
+      } else {
+        await axiosClient.post("/api/khoa", payload);
+      }
+      setForm({ maKhoa: "", tenKhoa: "" });
       setEditingId(null);
       loadData();
     } catch (e) {
-      alert("Lỗi dữ liệu!");
+      alert(e.response?.data || "Lỗi dữ liệu (Mã khoa có thể đã tồn tại)!");
     }
   };
 
@@ -55,13 +64,26 @@ export default function KhoaPage() {
               {editingId ? "Cập nhật Khoa" : "Thêm Khoa mới"}
             </h5>
             <form onSubmit={handleSubmit}>
+              <div className="mb-2">
+                <input
+                  type="number"
+                  className="form-control rounded-3 bg-light"
+                  placeholder="Mã khoa (VD: 101) *"
+                  value={form.maKhoa}
+                  onChange={(e) => setForm({ ...form, maKhoa: e.target.value })}
+                  disabled={!!editingId} // Khóa khi sửa
+                  required
+                />
+              </div>
               <div className="mb-3">
                 <input
                   type="text"
                   className="form-control rounded-3"
-                  placeholder="Tên khoa (VD: CNTT)"
-                  value={tenKhoa}
-                  onChange={(e) => setTenKhoa(e.target.value)}
+                  placeholder="Tên khoa (VD: CNTT) *"
+                  value={form.tenKhoa}
+                  onChange={(e) =>
+                    setForm({ ...form, tenKhoa: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -90,7 +112,7 @@ export default function KhoaPage() {
             <table className="table table-hover align-middle mb-0">
               <thead className="table-light text-muted small text-uppercase">
                 <tr>
-                  <th>Mã</th>
+                  <th>Mã Khoa</th>
                   <th>Tên Khoa</th>
                   <th className="text-center">Thao tác</th>
                 </tr>
@@ -105,7 +127,7 @@ export default function KhoaPage() {
                         className="btn btn-sm btn-light text-primary me-2"
                         onClick={() => {
                           setEditingId(k.maKhoa);
-                          setTenKhoa(k.tenKhoa);
+                          setForm({ maKhoa: k.maKhoa, tenKhoa: k.tenKhoa });
                         }}
                       >
                         <Edit size={16} />

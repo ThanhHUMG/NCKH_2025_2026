@@ -82,43 +82,38 @@ public class LopHocService implements ManageLopHocUseCase {
     @Override
     @Transactional
     public void importSinhVienExcel(Long maLopHoc, InputStream inputStream) {
-        DataFormatter formatter = new DataFormatter();
-        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-            Sheet sheet = workbook.getSheetAt(0);
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
+        LopHoc lopHoc = lopHocPort.timTheoId(maLopHoc)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy Lớp học với ID: " + maLopHoc));
+            
+    Khoa khoaMonHoc = lopHoc.getMonHoc().getKhoa();
+    DataFormatter formatter = new DataFormatter();
 
-                String maLopStr = formatter.formatCellValue(row.getCell(0));
-                if (maLopStr.isEmpty()) continue;
-                
-                LopHoc lopHoc = lopHocPort.timTheoId(Long.parseLong(maLopStr))
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy Lớp học"));
-                
-                lopHoc.setNhom(formatter.formatCellValue(row.getCell(1)));
-                lopHoc.setPhongHoc(formatter.formatCellValue(row.getCell(5)));
-                
-                String tietStr = formatter.formatCellValue(row.getCell(6));
-                if (!tietStr.isEmpty()) lopHoc.setTietBatDau(Integer.parseInt(tietStr));
-                
-                lopHoc.setThoiGian(formatter.formatCellValue(row.getCell(7)));
+    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+        Sheet sheet = workbook.getSheetAt(0);
+        
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) continue;
 
-                String msvStr = formatter.formatCellValue(row.getCell(4));
-                if (msvStr.isEmpty()) continue;
-                SinhVien sv = sinhVienPort.timTheoId(Long.parseLong(msvStr)).orElseThrow();
+            String msvStr = formatter.formatCellValue(row.getCell(1));
+            if (msvStr.isEmpty()) continue;
 
-                Khoa khoaMonHoc = lopHoc.getMonHoc().getKhoa();
-                if (!sv.getKhoa().getMaKhoa().equals(khoaMonHoc.getMaKhoa())) {
-                    throw new RuntimeException("Sinh viên " + sv.getHoTen() + " không thuộc khoa " + khoaMonHoc.getTenKhoa());
-                }
+            SinhVien sv = sinhVienPort.timTheoId(Long.parseLong(msvStr))
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên có mã: " + msvStr));
 
-                if (lopHoc.getDsSinhVien().stream().noneMatch(s -> s.getMsv().equals(sv.getMsv()))) {
-                    lopHoc.getDsSinhVien().add(sv);
-                }
-                lopHocPort.luu(lopHoc);
+            if (!sv.getKhoa().getMaKhoa().equals(khoaMonHoc.getMaKhoa())) {
+                throw new RuntimeException("Sinh viên " + sv.getHoTen() + " không thuộc khoa " + khoaMonHoc.getTenKhoa());
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi import Excel: " + e.getMessage());
+
+            if (lopHoc.getDsSinhVien().stream().noneMatch(s -> s.getMsv().equals(sv.getMsv()))) {
+                lopHoc.getDsSinhVien().add(sv);
+            }
         }
+
+        lopHocPort.luu(lopHoc);
+        
+    } catch (Exception e) {
+        throw new RuntimeException("Lỗi import Excel: " + e.getMessage());
     }
+}
 }

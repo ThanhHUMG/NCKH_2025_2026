@@ -29,43 +29,36 @@ public class DiemThiService implements ManageDiemThiUseCase {
     @Override
     @Transactional
     public void importDiemAExcel(Long maLopHoc, InputStream inputStream) {
-        // Giữ lại để tương thích với hệ thống cũ
-    }
-
-    // --- PHƯƠNG THỨC CỦA ADMIN/PHÒNG THI: NHẬP ĐIỂM A (Cột 5) ---
-    @Override
-    @Transactional
-    public void importDiemTuExcel(MultipartFile file) {
-        DataFormatter formatter = new DataFormatter(); // Nâng cấp: Chống lỗi format Excel
-        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+        DataFormatter formatter = new DataFormatter(); 
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
-            List<LopHoc> allLopHocs = lopHocPort.layTatCa(); // Tăng tốc độ dò tìm
+            List<LopHoc> allLopHocs = lopHocPort.layTatCa();
 
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Bỏ qua tiêu đề
+                if (row.getRowNum() == 0) continue; 
 
-                String msvStr = formatter.formatCellValue(row.getCell(1)); // Cột 1: MSV
-                String maMonStr = formatter.formatCellValue(row.getCell(3)); // Cột 3: Mã môn
-                String diemAStr = formatter.formatCellValue(row.getCell(5)); // Cột 5: Điểm A
+                // Sử dụng formatter và trim() để tránh lỗi khoảng trắng
+                String msvStr = formatter.formatCellValue(row.getCell(1)).trim();
+                String maMonStr = formatter.formatCellValue(row.getCell(3)).trim();
+                String diemAStr = formatter.formatCellValue(row.getCell(5)).trim();
 
+                // Bỏ qua nếu dòng trống
                 if (msvStr.isEmpty() || maMonStr.isEmpty() || diemAStr.isEmpty()) continue;
 
                 Long msv = Long.parseLong(msvStr);
                 Long maMon = Long.parseLong(maMonStr);
-                Double diemA = Double.parseDouble(diemAStr);
+                // Xử lý cả trường hợp điểm Excel nhập dấu phẩy (VD: 8,5 -> 8.5)
+                Double diemA = Double.parseDouble(diemAStr.replace(",", "."));
 
-                // 1. Lấy thông tin Sinh Viên
                 SinhVien sv = sinhVienPort.timTheoId(msv)
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy Sinh Viên có MSV: " + msv));
+                        .orElseThrow(() -> new RuntimeException("Dòng " + (row.getRowNum() + 1) + ": Không tìm thấy Sinh Viên có MSV: " + msv));
 
-                // 2. Dò tìm Lớp học khớp MSV và Mã Môn
                 LopHoc lopHoc = allLopHocs.stream()
                         .filter(lh -> lh.getMonHoc().getMaMonHoc().equals(maMon))
                         .filter(lh -> lh.getDsSinhVien().stream().anyMatch(s -> s.getMsv().equals(msv)))
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Sinh viên " + sv.getHoTen() + " không có danh sách thi môn " + maMon));
+                        .orElseThrow(() -> new RuntimeException("Dòng " + (row.getRowNum() + 1) + ": Sinh viên " + sv.getHoTen() + " không có danh sách thi môn " + maMon));
 
-                // 3. Cập nhật hoặc tạo mới
                 DiemThi diemThi = diemThiPort.findBySinhVienAndLopHoc(msv, lopHoc.getMaLopHoc())
                         .orElse(DiemThi.builder().sinhVien(sv).lopHoc(lopHoc).build());
                         
@@ -78,7 +71,17 @@ public class DiemThiService implements ManageDiemThiUseCase {
         }
     }
 
-    // --- PHƯƠNG THỨC MỚI CHO GIẢNG VIÊN: NHẬP ĐIỂM B & C (Cột 5, Cột 6) ---
+    @Override
+    @Transactional
+    public void importDiemTuExcel(MultipartFile file) {
+        try {
+            // Tái sử dụng code từ hàm importDiemAExcel để code gọn hơn
+            importDiemAExcel(null, file.getInputStream());
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi đọc luồng file: " + e.getMessage());
+        }
+    }
+
     @Override
     @Transactional
     public void importDiemThanhPhanExcel(MultipartFile file) {
@@ -90,8 +93,8 @@ public class DiemThiService implements ManageDiemThiUseCase {
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue; 
 
-                String msvStr = formatter.formatCellValue(row.getCell(1));  // Cột 1: MSV
-                String maMonStr = formatter.formatCellValue(row.getCell(3)); // Cột 3: Mã môn
+                String msvStr = formatter.formatCellValue(row.getCell(1)).trim();
+                String maMonStr = formatter.formatCellValue(row.getCell(3)).trim();
                 
                 if (msvStr.isEmpty() || maMonStr.isEmpty()) continue;
 
@@ -99,23 +102,23 @@ public class DiemThiService implements ManageDiemThiUseCase {
                 Long maMon = Long.parseLong(maMonStr);
 
                 SinhVien sv = sinhVienPort.timTheoId(msv)
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy Sinh Viên MSV: " + msv));
+                        .orElseThrow(() -> new RuntimeException("Dòng " + (row.getRowNum() + 1) + ": Không tìm thấy Sinh Viên MSV: " + msv));
 
                 LopHoc lopHoc = allLopHocs.stream()
                         .filter(lh -> lh.getMonHoc().getMaMonHoc().equals(maMon))
                         .filter(lh -> lh.getDsSinhVien().stream().anyMatch(s -> s.getMsv().equals(msv)))
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Sinh viên " + sv.getHoTen() + " chưa được xếp vào lớp môn " + maMon));
+                        .orElseThrow(() -> new RuntimeException("Dòng " + (row.getRowNum() + 1) + ": Sinh viên " + sv.getHoTen() + " chưa được xếp vào lớp môn " + maMon));
 
                 DiemThi diemThi = diemThiPort.findBySinhVienAndLopHoc(msv, lopHoc.getMaLopHoc())
                         .orElse(DiemThi.builder().sinhVien(sv).lopHoc(lopHoc).build());
 
-                // Đọc điểm B (Cột 5) và Điểm C (Cột 6)
-                String diemBStr = formatter.formatCellValue(row.getCell(5));
-                String diemCStr = formatter.formatCellValue(row.getCell(6));
+                String diemBStr = formatter.formatCellValue(row.getCell(5)).trim();
+                String diemCStr = formatter.formatCellValue(row.getCell(6)).trim();
 
-                if (!diemBStr.isEmpty()) diemThi.setDiemB(Double.parseDouble(diemBStr));
-                if (!diemCStr.isEmpty()) diemThi.setDiemC(Double.parseDouble(diemCStr));
+                // Dùng replace(",", ".") để tránh lỗi format điểm
+                if (!diemBStr.isEmpty()) diemThi.setDiemB(Double.parseDouble(diemBStr.replace(",", ".")));
+                if (!diemCStr.isEmpty()) diemThi.setDiemC(Double.parseDouble(diemCStr.replace(",", ".")));
 
                 diemThi.tinhDiem(); 
                 diemThiPort.luu(diemThi);
@@ -125,14 +128,19 @@ public class DiemThiService implements ManageDiemThiUseCase {
         }
     }
 
-    // --- THỐNG KÊ LỚP HỌC (Giữ nguyên) ---
     @Override
     public ThongKeLopHocDTO thongKeTheoLop(Long maLopHoc) {
         LopHoc lopHoc = lopHocPort.timTheoId(maLopHoc).orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học"));
         List<DiemThi> dsDiem = diemThiPort.findByLopHoc(maLopHoc);
         
         int total = dsDiem.size();
-        if (total == 0) return ThongKeLopHocDTO.builder().tongSoSinhVien(0).build();
+        if (total == 0) {
+            return ThongKeLopHocDTO.builder()
+                    .maLopHoc(maLopHoc)
+                    .tenMonHoc(lopHoc.getMonHoc().getTenMonHoc())
+                    .tongSoSinhVien(0)
+                    .build();
+        }
 
         int passCount = 0;
         int aP=0, a=0, bP=0, b=0, cP=0, c=0, dP=0, d=0, f=0;
@@ -140,19 +148,22 @@ public class DiemThiService implements ManageDiemThiUseCase {
         for (DiemThi dt : dsDiem) {
             if (dt.getDiemTb() != null) {
                 if (dt.getDiemTb() >= 4.0) passCount++;
-                switch (dt.getDiemChu()) {
-                    case "A+": aP++; break; case "A": a++; break;
-                    case "B+": bP++; break; case "B": b++; break;
-                    case "C+": cP++; break; case "C": c++; break;
-                    case "D+": dP++; break; case "D": d++; break;
-                    case "F": f++; break;
+                if (dt.getDiemChu() != null) {
+                    switch (dt.getDiemChu()) {
+                        case "A+": aP++; break; case "A": a++; break;
+                        case "B+": bP++; break; case "B": b++; break;
+                        case "C+": cP++; break; case "C": c++; break;
+                        case "D+": dP++; break; case "D": d++; break;
+                        case "F": f++; break;
+                    }
                 }
             }
         }
 
         return ThongKeLopHocDTO.builder()
                 .maLopHoc(maLopHoc).tenMonHoc(lopHoc.getMonHoc().getTenMonHoc())
-                .tenGiaoVien(lopHoc.getGiaoVien().getHoTen()).tongSoSinhVien(total)
+                .tenGiaoVien(lopHoc.getGiaoVien() != null ? lopHoc.getGiaoVien().getHoTen() : "Không có")
+                .tongSoSinhVien(total)
                 .soLuongDat(passCount).soLuongTruot(total - passCount)
                 .tiLeDat(Math.round(((double) passCount / total) * 10000.0) / 100.0)
                 .diemA_Plus(aP).diemA(a).diemB_Plus(bP).diemB(b).diemC_Plus(cP).diemC(c).diemD_Plus(dP).diemD(d).diemF(f)
